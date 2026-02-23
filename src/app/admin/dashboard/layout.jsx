@@ -1,5 +1,4 @@
 import Sidebar from "../../../components/dashboard/Sidebar";
-
 export default function DashboardLayout({ children }) {
   return (
     <div className="flex bg-gray-50 min-h-screen">

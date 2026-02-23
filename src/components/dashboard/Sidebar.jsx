@@ -1,26 +1,38 @@
 "use client";
 import Link from "next/link";
+import React, { useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import * as Icons from "lucide-react";
 import { SIDEBAR_LINKS } from "../../constants/dummyData";
-import { useGetMeQuery } from "../../services/userApi"; 
+import { useGetMeQuery } from "../../services/userApi";
+import { useGetAllSubmissionsQuery } from "../../services/manuscriptApi";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  
+
   const { data: user, isLoading } = useGetMeQuery();
-  console.log("Response here  :-- ",user);
+  console.log("Response here  :-- ", user);
+
+  const { data: submissionData } = useGetAllSubmissionsQuery();
+
+  const unreadCount = useMemo(() => {
+    if (!submissionData?.submissions) return 0;
+    const saved = typeof window !== "undefined"
+      ? JSON.parse(localStorage.getItem("readManuscripts") || "[]")
+      : [];
+    return submissionData.submissions.filter(m => !saved.includes(m._id)).length;
+  }, [submissionData]);
 
   // Handle Logout function
   const handleLogout = () => {
-    localStorage.removeItem("token"); 
-    router.push("/login"); 
+    localStorage.removeItem("token");
+    router.push("/login");
   };
 
   return (
     <div className="w-72 bg-slate-950 text-white h-screen p-6 flex flex-col justify-between border-r border-slate-800 sticky top-0">
-      
+
       {/* --- TOP SECTION: Logo & Brand --- */}
       <div>
         <div className="mb-10 px-2">
@@ -42,20 +54,28 @@ export default function Sidebar() {
           {SIDEBAR_LINKS.map((link) => {
             const IconComponent = Icons[link.icon] || Icons.HelpCircle;
             const isActive = pathname === link.href;
+            const isActivityCenter = link.name === "Activity Center";
 
             return (
               <Link
                 key={link.name}
                 href={link.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
-                  isActive 
-                    ? "bg-blue-600/10 text-blue-500 border border-blue-600/20" 
-                    : "hover:bg-slate-900 text-slate-400 hover:text-slate-100"
-                }`}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${isActive
+                  ? "bg-blue-600/10 text-blue-500 border border-blue-600/20"
+                  : "hover:bg-slate-900 text-slate-400 hover:text-slate-100"
+                  }`}
               >
                 <IconComponent size={18} className={`${isActive ? "text-blue-500" : "group-hover:scale-110 transition-transform"}`} />
                 <span className="font-medium text-sm">{link.name}</span>
-                {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]" />}
+                {/* --- 6. BADGE ADDED HERE --- */}
+                {isActivityCenter && unreadCount > 0 && (
+                  <span className="ml-auto bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center shadow-lg shadow-red-900/20">
+                    {unreadCount}
+                  </span>
+                )}
+
+                {isActive && !isActivityCenter && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]" />}
+
               </Link>
             );
           })}
