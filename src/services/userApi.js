@@ -11,6 +11,14 @@ export const userApi = baseApi.injectEndpoints({
       query: () => "/users/all",
       providesTags: ["User"],
     }),
+    getAllEditors: builder.query({
+      query:()=> "/users/editors",
+      providesTags: ["User"],
+    }),
+    getAllReviewers: builder.query({
+      query:()=> "/users/reviewers",
+      providesTags: ["User"],
+    }),
     createUser: builder.mutation({
       query: (data) => ({
         url: "/users/create",
@@ -43,4 +51,6 @@ export const {
   useCreateUserMutation,
   useAssignRoleMutation,
   useToggleBlockMutation,
+  useGetAllEditorsQuery,
+  useGetAllReviewersQuery,
 } = userApi;
