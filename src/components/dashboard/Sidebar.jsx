@@ -4,7 +4,7 @@ import Link from "next/link";
 import React, { useMemo, useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import * as Icons from "lucide-react";
-import { SIDEBAR_LINKS, EDITOR_SIDEBAR_LINKS } from "../../constants/dummyData";
+import { SIDEBAR_LINKS, EDITOR_SIDEBAR_LINKS, REVIEWER_SIDEBAR_LINKS } from "../../constants/dummyData";
 import { useGetMeQuery } from "../../services/userApi";
 import { useGetAllSubmissionsQuery, useGetAssignedToEditorQuery } from "../../services/manuscriptApi";
 import { baseApi } from "../../services/baseApi";
@@ -27,18 +27,30 @@ const ROLE_CONFIG = {
     title: "Editor",
     links: EDITOR_SIDEBAR_LINKS,
     theme: {
-      badgeBg: "bg-indigo-600",
-      textActive: "text-indigo-400",
-      bgActive: "bg-indigo-600/10",
-      borderActive: "border-indigo-600/20",
-      shadowActive: "shadow-[0_0_8px_rgba(99,102,241,0.8)]",
-      gradient: "from-indigo-600 to-purple-500"
+      badgeBg: "bg-teal-600",
+      textActive: "text-teal-400",
+      bgActive: "bg-teal-500/10",
+      borderActive: "border-teal-500/20",
+      shadowActive: "shadow-[0_0_10px_rgba(20,184,166,0.8)]",
+      gradient: "from-teal-500 via-cyan-500 to-emerald-500"
+    }
+  },
+  reviewer: {
+    title: "Reviewer",
+    links: REVIEWER_SIDEBAR_LINKS,
+    theme: {
+      badgeBg: "bg-orange-600",
+      textActive: "text-orange-400",
+      bgActive: "bg-orange-600/10",
+      borderActive: "border-orange-600/20",
+      shadowActive: "shadow-[0_0_8px_rgba(251,146,60,0.8)]",
+      gradient: "from-orange-600 to-yellow-500"
     }
   }
 };
 
 export default function Sidebar({ role = "admin" }) {
-  const dispatch=useDispatch()
+  const dispatch = useDispatch()
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false); // State to handle mobile menu toggle
@@ -89,7 +101,7 @@ export default function Sidebar({ role = "admin" }) {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
 
-    dispatch(baseApi.util.resetApiState()); 
+    dispatch(baseApi.util.resetApiState());
 
     router.replace("/login");
   };
@@ -128,7 +140,13 @@ export default function Sidebar({ role = "admin" }) {
         <div className="p-6 shrink-0">
           <div className="flex items-center gap-3 mb-1">
             <div className={`w-9 h-9 ${theme.badgeBg} rounded-xl flex items-center justify-center shadow-lg`}>
-              {role === 'editor' ? <Icons.Edit3 size={20} /> : <Icons.LayoutDashboard size={20} />}
+              {role === "editor" ? (
+                <Icons.Edit3 size={20} />
+              ) : role === "reviewer" ? (
+                <Icons.ClipboardCheck size={20} />
+              ) : (
+                <Icons.LayoutDashboard size={20} />
+              )}
             </div>
             <h2 className="text-xl font-extrabold tracking-tight text-slate-100">
               Journal <span className={theme.textActive}>{title}</span>

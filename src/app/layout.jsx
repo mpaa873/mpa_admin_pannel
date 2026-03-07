@@ -30,7 +30,6 @@ export default function RootLayout({ children }) {
             position="top-center"
             reverseOrder={false}
             toastOptions={{
-              // Global professional styling for all toasts
               duration: 3000,
               style: {
                 background: "#333",

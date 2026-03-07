@@ -8,7 +8,6 @@ export const STATS_DATA = [
   { label: "Approved Papers", value: 190, color: "text-emerald-600" },
   { label: "Rejected Papers", value: 68, color: "text-red-600" },
 ];
-
 export const RECENT_SUBMISSIONS = [
   { id: 1, title: "AI in Medical Diagnosis", author: "Dr. Rahul Sharma", status: "Under Review", date: "2023-10-01" },
   { id: 2, title: "Cybersecurity in Blockchain", author: "Prof. Mehta", status: "Approved", date: "2023-10-05" },
@@ -32,4 +31,12 @@ export const EDITOR_SIDEBAR_LINKS = [
   { name: "Activity & Notifications", href: "/editor/dashboard/activity", icon: "BellRing" },
   { name: "Messages / Communication", href: "/editor/dashboard/messages", icon: "Mail" },
 
+];
+
+export const REVIEWER_SIDEBAR_LINKS = [
+  { name: "Reviewer Dashboard", href: "/reviewer/dashboard", icon: "LayoutDashboard" },
+  { name: "Assigned Papers", href: "/reviewer/dashboard/papers", icon: "FileText" },
+  { name: "Submit Review", href: "/reviewer/dashboard/reviews", icon: "ClipboardCheck" },
+  { name: "Activity", href: "/reviewer/dashboard/activity", icon: "BellRing" },
+  { name: "Messages", href: "/reviewer/dashboard/messages", icon: "Mail" },
 ];
