@@ -40,7 +40,7 @@ export default function Login() {
 
     } catch (err) {
       const errorMessage = err?.data?.message || "Invalid Credentials";
-    
+
       toast.error(errorMessage);
     }
   };
