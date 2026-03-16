@@ -33,8 +33,11 @@ export default function ReviewersManagement() {
   const [rejectFeedback, setRejectFeedback] = useState("");
 
   // Extract arrays from API response
-  const manuscripts = manuscriptData?.manuscripts ||[];
-  const availableReviewers = reviewersData?.data ||[];
+  const manuscripts = manuscriptData?.manuscripts || [];
+  const availableReviewers = reviewersData?.data || [];
+
+  //For File fucntionality for rejection by editor states
+  const [rejectFile, setRejectFile] = useState(null);
 
   // --- Modal Handlers ---
   const openAssignModal = (manuscript) => {
@@ -54,6 +57,7 @@ export default function ReviewersManagement() {
     setSelectedManuscript(null);
     setSelectedReviewers([]);
     setRejectFeedback("");
+    setRejectFile(null);
   };
 
   // --- Actions ---
@@ -96,13 +100,19 @@ export default function ReviewersManagement() {
     }
 
     try {
-      await updateStatus({
-        manuscriptId: selectedManuscript._id,
-        status: "Rejected",
-        feedback: rejectFeedback,
-      }).unwrap();
+      // Create FormData for file support
+      const formData = new FormData();
+      formData.append("manuscriptId", selectedManuscript._id);
+      formData.append("status", "Rejected");
+      formData.append("feedback", rejectFeedback);
+      if (rejectFile) {
+        formData.append("feedbackFile", rejectFile);
+      }
 
-      toast.success("Manuscript rejected and author notified via email!");
+
+      await updateStatus(formData).unwrap();
+
+      toast.success("Manuscript rejected and author notified!");
       closeModal();
     } catch (error) {
       console.error("Failed to reject manuscript:", error);
@@ -241,7 +251,7 @@ export default function ReviewersManagement() {
                             <UserPlus className="w-4 h-4" />
                             <span className="hidden sm:inline">Assign</span>
                           </button>
-                          
+
                           {/* Reject Button */}
                           <button
                             onClick={() => openRejectModal(manuscript)}
@@ -290,11 +300,10 @@ export default function ReviewersManagement() {
               <div className="flex justify-between items-center mb-4">
                 <h4 className="font-semibold text-gray-800">Available Reviewers</h4>
                 <span
-                  className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
-                    selectedReviewers.length === 2
-                      ? "bg-green-100 text-green-700"
-                      : "bg-orange-100 text-orange-700"
-                  }`}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${selectedReviewers.length === 2
+                    ? "bg-green-100 text-green-700"
+                    : "bg-orange-100 text-orange-700"
+                    }`}
                 >
                   Selected: {selectedReviewers.length} / 2
                 </span>
@@ -318,21 +327,19 @@ export default function ReviewersManagement() {
                     return (
                       <label
                         key={reviewer._id}
-                        className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all ${
-                          isSelected
-                            ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
-                            : isDisabled
+                        className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all ${isSelected
+                          ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
+                          : isDisabled
                             ? "opacity-50 cursor-not-allowed bg-gray-50 border-gray-200"
                             : "border-gray-200 hover:border-blue-300 hover:bg-white bg-white shadow-sm"
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-4">
                           <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
-                              isSelected
-                                ? "bg-blue-600 text-white"
-                                : "bg-gray-100 text-gray-600"
-                            }`}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${isSelected
+                              ? "bg-blue-600 text-white"
+                              : "bg-gray-100 text-gray-600"
+                              }`}
                           >
                             {reviewer.name.charAt(0)}
                           </div>
@@ -367,11 +374,10 @@ export default function ReviewersManagement() {
               <button
                 onClick={handleSubmitAssignment}
                 disabled={selectedReviewers.length !== 2 || isAssigning}
-                className={`px-6 py-2.5 text-white font-medium rounded-xl transition-all flex items-center gap-2 shadow-sm ${
-                  selectedReviewers.length === 2
-                    ? "bg-blue-600 hover:bg-blue-700 cursor-pointer hover:shadow-md"
-                    : "bg-gray-300 cursor-not-allowed"
-                }`}
+                className={`px-6 py-2.5 text-white font-medium rounded-xl transition-all flex items-center gap-2 shadow-sm ${selectedReviewers.length === 2
+                  ? "bg-blue-600 hover:bg-blue-700 cursor-pointer hover:shadow-md"
+                  : "bg-gray-300 cursor-not-allowed"
+                  }`}
               >
                 {isAssigning ? "Assigning..." : "Confirm Assignment"}
               </button>
@@ -379,62 +385,135 @@ export default function ReviewersManagement() {
           </div>
         </div>
       )}
-
       {/* --- Reject Manuscript Modal --- */}
       {activeModal === "reject" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-red-50/50">
-              <h3 className="text-xl font-bold text-red-700 flex items-center gap-2">
-                <XCircle className="w-5 h-5" />
-                Reject Manuscript
-              </h3>
+          {/* Added max-h-[95vh] and flex-col to the main container */}
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col border border-gray-100 max-h-[90vh]">
+
+            {/* Header - Fixed at top */}
+            <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-50 rounded-lg">
+                  <XCircle className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Reject Manuscript</h3>
+                  <p className="text-xs text-gray-500 font-medium uppercase tracking-tight">
+                    ID: {selectedManuscript?.manuscriptId}
+                  </p>
+                </div>
+              </div>
               <button
                 onClick={closeModal}
-                className="text-gray-400 hover:text-red-700 bg-white hover:bg-red-50 p-2 rounded-full transition"
+                className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-full transition-all"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6 bg-white">
-              <p className="text-sm text-gray-600 mb-4">
-                You are about to reject the manuscript <span className="font-bold text-gray-900">"{selectedManuscript?.title}"</span>. 
-                The researcher will receive an automated email notifying them of this decision along with your feedback below.
-              </p>
+            {/* Body - Scrollable Area */}
+            <div className="p-6 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
+              {/* Warning Note */}
+              <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 flex gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-sm text-amber-800 leading-relaxed">
+                  Rejecting <span className="font-bold">"{selectedManuscript?.title}"</span>. This action will notify the author via email.
+                </p>
+              </div>
 
+              {/* Feedback Textarea */}
               <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                  <MessageSquare className="w-4 h-4 text-gray-400" />
-                  Rejection Feedback (Required)
+                <label className="flex items-center gap-2 text-sm font-bold text-gray-700">
+                  <MessageSquare className="w-4 h-4 text-blue-500" />
+                  Rejection Feedback <span className="text-red-500">*</span>
                 </label>
                 <textarea
-                  rows={5}
-                  className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all text-sm text-gray-800 resize-none bg-gray-50 focus:bg-white"
-                  placeholder="Provide a detailed reason for rejecting this manuscript..."
+                  rows={4}
+                  className="w-full border border-gray-200 rounded-xl p-4 focus:ring-4 focus:ring-red-500/10 focus:border-red-500 outline-none transition-all text-sm text-gray-800 resize-none bg-gray-50/50 placeholder:text-gray-400"
+                  placeholder="Write a detailed explanation for the rejection..."
                   value={rejectFeedback}
                   onChange={(e) => setRejectFeedback(e.target.value)}
                 ></textarea>
               </div>
+
+              {/* Improved File Upload */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-bold text-gray-700">
+                  <FileText className="w-4 h-4 text-blue-500" />
+                  Attach Supporting Documents <span className="text-xs font-normal text-gray-400">(Optional)</span>
+                </label>
+
+                {!rejectFile ? (
+                  <div
+                    className="relative border-2 border-dashed border-gray-200 rounded-xl p-8 transition-all hover:border-blue-400 hover:bg-blue-50/30 group cursor-pointer"
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setRejectFile(e.dataTransfer.files[0]);
+                    }}
+                  >
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={(e) => setRejectFile(e.target.files[0])}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <div className="flex flex-col items-center justify-center text-center">
+                      <div className="p-3 bg-white rounded-full shadow-sm border border-gray-100 group-hover:scale-110 transition-transform duration-300">
+                        <Search className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <p className="mt-3 text-sm font-semibold text-gray-700">Click to upload or drag & drop</p>
+                      <p className="text-xs text-gray-400 mt-1">PDF, DOC, DOCX up to 10MB</p>
+                    </div>
+                  </div>
+                ) : (
+                  /* Selected File Card */
+                  <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-100 rounded-xl animate-in zoom-in-95 duration-200">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-white rounded-lg shadow-sm">
+                        <FileText className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div className="max-w-[200px] sm:max-w-xs">
+                        <p className="text-sm font-bold text-gray-900 truncate">{rejectFile.name}</p>
+                        <p className="text-xs text-gray-500">{(rejectFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setRejectFile(null)}
+                      className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+            {/* Footer - Fixed at bottom */}
+            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/80 flex justify-end gap-3 shrink-0">
               <button
                 onClick={closeModal}
-                className="px-5 py-2.5 text-gray-700 font-medium hover:bg-gray-200 rounded-xl transition"
+                className="px-5 py-2.5 text-gray-600 font-bold text-sm hover:bg-gray-200 rounded-xl transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleRejectManuscript}
                 disabled={isRejecting || !rejectFeedback.trim()}
-                className={`px-6 py-2.5 text-white font-medium rounded-xl transition-all flex items-center gap-2 shadow-sm ${
-                  !rejectFeedback.trim()
-                    ? "bg-red-300 cursor-not-allowed"
-                    : "bg-red-600 hover:bg-red-700 hover:shadow-md cursor-pointer"
-                }`}
+                className={`px-8 py-2.5 text-white font-bold text-sm rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-red-500/20 ${!rejectFeedback.trim() || isRejecting
+                  ? "bg-red-300 cursor-not-allowed shadow-none"
+                  : "bg-red-600 hover:bg-red-700 active:scale-95"
+                  }`}
               >
-                {isRejecting ? "Rejecting..." : "Confirm Rejection"}
+                {isRejecting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  "Reject Manuscript"
+                )}
               </button>
             </div>
           </div>

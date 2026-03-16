@@ -10,7 +10,7 @@ import { useGetAllEditorsQuery, useGetAllReviewersQuery } from "../../../../serv
 import {
   FileText, UserCheck, Users, XCircle,
   ChevronLeft, ChevronRight, ExternalLink,
-  MoreHorizontal, Loader2, MessageSquare, AlertCircle, Edit
+  MoreHorizontal, Loader2, MessageSquare, AlertCircle, Edit, Check, Upload
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
@@ -35,6 +35,10 @@ const AllSubmissions = () => {
   const [assignEditor, { isLoading: isAssigningEditor }] = useAssignEditorMutation();
   const [assignReviewers, { isLoading: isAssigningReviewer }] = useAssignReviewersMutation();
 
+  // Files uplod for reject and feedback states
+  const [rejectFile, setRejectFile] = useState(null);
+  const [revisionFile, setRevisionFile] = useState(null);
+
   // --- Handlers ---
   const closeModal = () => {
     setModalType(null);
@@ -42,16 +46,25 @@ const AllSubmissions = () => {
     setFeedback("");
     setSelectedEditor("");
     setSelectedReviewers([]);
+    setRejectFile(null);
+    setRevisionFile(null);
   };
 
   const handleReject = async () => {
     if (!feedback) return toast.error("Please provide rejection feedback");
+
     try {
-      await updateStatus({
-        manuscriptId: selectedManuscript._id,
-        status: "Rejected",
-        feedback
-      }).unwrap();
+      const formData = new FormData();
+      formData.append("manuscriptId", selectedManuscript._id);
+      formData.append("status", "Rejected");
+      formData.append("feedback", feedback);
+
+      if (rejectFile) {
+        formData.append("feedbackFile", rejectFile);
+      }
+
+      await updateStatus(formData).unwrap();
+
       toast.success("Manuscript Rejected");
       closeModal();
     } catch (err) {
@@ -62,18 +75,22 @@ const AllSubmissions = () => {
   const handleRequestRevision = async () => {
     if (!feedback) return toast.error("Please provide revision feedback");
     try {
-      await updateStatus({
-        manuscriptId: selectedManuscript._id,
-        status: "Revision Required",
-        feedback
-      }).unwrap();
+      const formData = new FormData();
+      formData.append("manuscriptId", selectedManuscript._id);
+      formData.append("status", "Revision Required");
+      formData.append("feedback", feedback);
+
+      if (revisionFile) {
+        formData.append("feedbackFile", revisionFile);
+      }
+      await updateStatus(formData).unwrap();
+
       toast.success("Revision Request Sent to Author");
       closeModal();
     } catch (err) {
       toast.error(err?.data?.message || "Failed to request revision");
     }
   };
-
   const handleAssignEditor = async () => {
     if (!selectedEditor) return toast.error("Please select an editor");
     try {
@@ -244,7 +261,7 @@ const AllSubmissions = () => {
       {modalType && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+            <div className="p-2 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
               <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 {modalType === 'editor' && <><UserCheck className="text-indigo-600" /> Assign Editor</>}
                 {modalType === 'reviewer' && <><Users className="text-emerald-600" /> Assign 2 Reviewers</>}
@@ -325,21 +342,87 @@ const AllSubmissions = () => {
 
               {/* Rejection Modal */}
               {modalType === 'reject' && (
-                <div className="space-y-4">
-                  <label className="block text-xs font-bold text-gray-400 uppercase">Reason for Rejection</label>
-                  <textarea
-                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-rose-500 outline-none transition-all text-sm min-h-[120px]"
-                    placeholder="Enter professional feedback for the author..."
-                    value={feedback}
-                    onChange={(e) => setFeedback(e.target.value)}
-                  />
-                  <button
-                    onClick={handleReject}
-                    disabled={isStatusUpdating}
-                    className="w-full py-3 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 transition-all shadow-lg shadow-rose-200 flex justify-center"
-                  >
-                    {isStatusUpdating ? <Loader2 className="animate-spin" /> : "Confirm Rejection"}
-                  </button>
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+                  {/* Feedback Textarea */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center px-1">
+                      <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1.5">
+                        <MessageSquare size={14} className="text-rose-500" />
+                        Reason for Rejection
+                      </label>
+                      <span className="text-[10px] text-gray-400 italic font-medium">Author will see this</span>
+                    </div>
+                    <textarea
+                      className="w-full p-4 bg-white border-2 border-gray-100 rounded-2xl focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 outline-none transition-all text-sm min-h-[140px] shadow-sm placeholder:text-gray-300"
+                      placeholder="Please provide detailed, constructive feedback for the author regarding why the manuscript was not accepted..."
+                      value={feedback}
+                      onChange={(e) => setFeedback(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Custom Styled File Upload */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase px-1">Attach Supporting Document (Optional)</label>
+                    <div className="relative group">
+                      <input
+                        type="file"
+                        id="feedback-file"
+                        className="hidden"
+                        onChange={(e) => setRejectFile(e.target.files[0])}
+                      />
+                      <label
+                        htmlFor="feedback-file"
+                        className={`flex items-center justify-center gap-3 w-full p-4 border-2 border-dashed rounded-2xl cursor-pointer transition-all
+            ${rejectFile
+                            ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                            : 'bg-gray-50 border-gray-200 hover:border-rose-300 hover:bg-rose-50/30'
+                          }`}
+                      >
+                        {rejectFile ? (
+                          <div className="flex items-center gap-2">
+                            <div className="bg-emerald-500 text-white p-1 rounded-full">
+                              <Check size={12} strokeWidth={3} />
+                            </div>
+                            <span className="text-sm font-semibold truncate max-w-[200px]">{rejectFile.name}</span>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="bg-white p-2 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
+                              <Upload size={18} className="text-gray-400 group-hover:text-rose-500" />
+                            </div>
+                            <span className="text-sm font-medium text-gray-500 group-hover:text-rose-600">Click to upload evaluation file</span>
+                          </>
+                        )}
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Action Button */}
+                  <div className="pt-2">
+                    <button
+                      onClick={handleReject}
+                      disabled={isStatusUpdating}
+                      className="group relative w-full py-4 bg-rose-600 hover:bg-rose-700 disabled:bg-gray-300 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-rose-200 active:scale-[0.98] overflow-hidden"
+                    >
+                      <div className="relative z-10 flex items-center justify-center gap-2">
+                        {isStatusUpdating ? (
+                          <Loader2 className="animate-spin" />
+                        ) : (
+                          <>
+                            <XCircle size={18} />
+                            Confirm Rejection
+                          </>
+                        )}
+                      </div>
+                      {/* Subtle Button Shine Animation */}
+                      {!isStatusUpdating && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+                      )}
+                    </button>
+                    <p className="text-center text-[10px] text-gray-400 mt-4">
+                      This action is final and will notify the author immediately.
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -356,6 +439,44 @@ const AllSubmissions = () => {
                     value={feedback}
                     onChange={(e) => setFeedback(e.target.value)}
                   />
+                  <div className="space-y-2 mb-8">
+                    <label className="text-xs font-bold text-gray-500 uppercase px-1 flex items-center gap-1.5">
+                      <Upload size={14} className="text-gray-400" />
+                      Supporting Document (Optional)
+                    </label>
+                    <div className="relative group">
+                      <input
+                        type="file"
+                        id="revision-file"
+                        className="hidden"
+                        onChange={(e) => setRevisionFile(e.target.files[0])}
+                      />
+                      <label
+                        htmlFor="revision-file"
+                        className={`flex items-center justify-center gap-3 w-full p-4 border-2 border-dashed rounded-2xl cursor-pointer transition-all
+            ${revisionFile
+                            ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                            : 'bg-gray-50 border-gray-200 hover:border-orange-300 hover:bg-orange-50/30'
+                          }`}
+                      >
+                        {revisionFile ? (
+                          <div className="flex items-center gap-2">
+                            <div className="bg-emerald-500 text-white p-1 rounded-full">
+                              <Check size={12} strokeWidth={3} />
+                            </div>
+                            <span className="text-sm font-semibold truncate max-w-[200px]">{revisionFile.name}</span>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="bg-white p-2 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
+                              <Upload size={18} className="text-gray-400 group-hover:text-orange-500" />
+                            </div>
+                            <span className="text-sm font-medium text-gray-500 group-hover:text-orange-600">Click to upload annotated file</span>
+                          </>
+                        )}
+                      </label>
+                    </div>
+                  </div>
                   <button
                     onClick={handleRequestRevision}
                     disabled={isStatusUpdating}
