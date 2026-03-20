@@ -106,7 +106,7 @@ const AllSubmissions = () => {
   };
 
   const handleAssignReviewers = async () => {
-    if (selectedReviewers.length !== 2) return toast.error("Please select exactly 2 reviewers");
+    if (selectedReviewers.length < 2) return toast.error("Minimum 2 reviewers required");
     try {
       await assignReviewers({
         manuscriptId: selectedManuscript._id,
@@ -200,7 +200,7 @@ const AllSubmissions = () => {
                         )}
                         <div className="flex items-center gap-2 text-xs text-gray-500">
                           <Users size={14} className="text-gray-400" />
-                          <span>{item.assignedReviewers?.length || 0} / 2 Reviewers</span>
+                          <span>{item.assignedReviewers?.length || 0}   Reviewers</span>
                         </div>
                       </div>
                     </td>
@@ -302,7 +302,7 @@ const AllSubmissions = () => {
               {/* Reviewer Assignment */}
               {modalType === 'reviewer' && (
                 <div className="space-y-4">
-                  <label className="block text-xs font-bold text-gray-400 uppercase underline">Select Exactly 2 Reviewers</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase underline">Select Minimum 2 Reviewers</label>
                   <div className="max-h-60 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
                     {reviewers?.data?.map(rev => (
                       <label key={rev._id} className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${selectedReviewers.includes(rev._id) ? 'bg-emerald-50 border-emerald-500 shadow-sm' : 'bg-gray-50 border-gray-200'}`}>
@@ -313,8 +313,7 @@ const AllSubmissions = () => {
                             checked={selectedReviewers.includes(rev._id)}
                             onChange={(e) => {
                               if (e.target.checked) {
-                                if (selectedReviewers.length < 2) setSelectedReviewers([...selectedReviewers, rev._id]);
-                                else toast.error("Only 2 reviewers allowed");
+                                setSelectedReviewers([...selectedReviewers, rev._id]);
                               } else {
                                 setSelectedReviewers(selectedReviewers.filter(id => id !== rev._id));
                               }
@@ -331,10 +330,10 @@ const AllSubmissions = () => {
                   <div className="pt-4">
                     <button
                       onClick={handleAssignReviewers}
-                      disabled={isAssigningReviewer || selectedReviewers.length !== 2}
+                      disabled={isAssigningReviewer || selectedReviewers.length < 2}
                       className="w-full py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 disabled:bg-gray-300 transition-all shadow-lg shadow-emerald-200 flex justify-center"
                     >
-                      {isAssigningReviewer ? <Loader2 className="animate-spin" /> : `Assign ${selectedReviewers.length} / 2 Selected`}
+                      {isAssigningReviewer ? <Loader2 className="animate-spin" /> : `Assign ${selectedReviewers.length} Selected`}
                     </button>
                   </div>
                 </div>
