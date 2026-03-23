@@ -433,7 +433,7 @@ const AllSubmissions = () => {
                   </div>
                   <label className="block text-xs font-bold text-gray-400 uppercase">What needs to be fixed?</label>
                   <textarea
-                    className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none transition-all text-sm min-h-[120px]"
+                    className="w-full text-black p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-500 outline-none transition-all text-sm min-h-[120px]"
                     placeholder="e.g., Cover letter is missing, table formatting is incorrect..."
                     value={feedback}
                     onChange={(e) => setFeedback(e.target.value)}

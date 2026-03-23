@@ -147,6 +147,10 @@ const ActivityCenter = () => {
                 <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2">Abstract</h4>
                 <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-2xl whitespace-pre-line">{selectedSubmission.abstract}</p>
               </div>
+               <div>
+                <h4 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2">Manuscript Type</h4>
+                <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-2xl whitespace-pre-line">{selectedSubmission.manuscriptType}</p>
+              </div>
 
               {/* ENHANCED FILE SECTION: Handling all potential schema keys */}
               <div>
