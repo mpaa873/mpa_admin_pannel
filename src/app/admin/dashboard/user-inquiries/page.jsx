@@ -1,11 +1,11 @@
 "use client";
 import React, { useState } from 'react';
-import { 
-    useGetEnquiriesQuery, 
-    useDeleteEnquiryMutation 
-} from "../../../../services/enquiryApi"; 
-import { 
-    Eye, Trash2, X, ChevronLeft, ChevronRight, Mail, 
+import {
+    useGetEnquiriesQuery,
+    useDeleteEnquiryMutation
+} from "../../../../services/enquiryApi";
+import {
+    Eye, Trash2, X, ChevronLeft, ChevronRight, Mail,
     MessageSquare, Clock, AlertCircle, Loader2, Reply, AlertTriangle
 } from 'lucide-react';
 
@@ -20,18 +20,16 @@ export default function AdminEnquiry() {
     // 2. Component State Management
     // ==========================================
     const [currentPage, setCurrentPage] = useState(1);
-    const[selectedEnquiry, setSelectedEnquiry] = useState(null); // For View Modal
+    const [selectedEnquiry, setSelectedEnquiry] = useState(null); // For View Modal
     const [enquiryToDelete, setEnquiryToDelete] = useState(null); // For Delete Confirmation Modal
-    
+
     const itemsPerPage = 8;
 
     // ==========================================
     // 3. Data Extraction & Pagination Logic
     // ==========================================
-    // Extract data array from response (default to empty array if undefined)
-    const enquiries = response?.data ||[];
+    const enquiries = response?.data || [];
 
-    // Calculate pagination details
     const totalPages = Math.ceil(enquiries.length / itemsPerPage);
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -40,25 +38,20 @@ export default function AdminEnquiry() {
     // ==========================================
     // 4. Helper Functions
     // ==========================================
-    
-    // Function to handle the actual deletion process
     const confirmDelete = async () => {
         if (!enquiryToDelete) return;
-        
         try {
             await deleteEnquiry(enquiryToDelete).unwrap();
-            // If we delete the last item on the current page, go back one page
             if (currentItems.length === 1 && currentPage > 1) {
                 setCurrentPage((prev) => prev - 1);
             }
-            setEnquiryToDelete(null); // Close modal on success
+            setEnquiryToDelete(null);
         } catch (error) {
             console.error("Failed to delete enquiry:", error);
             alert("Failed to delete enquiry. Please try again.");
         }
     };
 
-    // Function to format the date in a clean, modern way
     const formatDate = (dateString) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-IN', {
@@ -67,16 +60,14 @@ export default function AdminEnquiry() {
         });
     };
 
-    // Generate initials for the user avatar (e.g., "John Doe" -> "JD")
     const getInitials = (name) => {
         if (!name) return "U";
         return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
     };
 
     // ==========================================
-    // 5. Conditional Rendering (Loading & Error States)
+    // 5. Conditional Rendering (Loading & Error)
     // ==========================================
-    
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
@@ -94,7 +85,7 @@ export default function AdminEnquiry() {
                         <AlertCircle className="w-8 h-8 text-red-500" />
                     </div>
                     <h2 className="text-xl font-bold text-slate-800 mb-2">Failed to load data</h2>
-                    <p className="text-slate-500 text-sm">There was a problem fetching the user enquiries. Please check your connection or try refreshing the page.</p>
+                    <p className="text-slate-500 text-sm">Problem fetching enquiries. Please refresh.</p>
                 </div>
             </div>
         );
@@ -104,105 +95,98 @@ export default function AdminEnquiry() {
     // 6. Main UI Render
     // ==========================================
     return (
-        <div className="p-4 sm:p-8 bg-slate-50 min-h-screen font-sans">
+        <div className="p-4 sm:p-6 lg:p-8 bg-slate-50 min-h-screen font-sans">
             <div className="max-w-7xl mx-auto space-y-6">
-                
-                {/* Header Section */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+
+                {/* Header Section - Responsive Flex */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
-                            <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
-                                <MessageSquare className="w-6 h-6" />
+                        <h1 className="text-xl sm:text-2xl font-bold text-slate-800 flex items-center gap-3">
+                            <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600 shrink-0">
+                                <MessageSquare className="w-5 h-5 sm:w-6 h-6" />
                             </div>
                             User Enquiries
                         </h1>
-                        <p className="text-slate-500 text-sm mt-1 ml-12">
-                            Manage, view, and reply to all incoming messages from users.
+                        <p className="text-slate-500 text-xs sm:text-sm mt-1">
+                            Manage and reply to incoming user messages.
                         </p>
                     </div>
-                    <div className="flex items-center gap-2 bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200">
+                    <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-xl border border-slate-200">
                         <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
-                        <span className="text-sm font-semibold text-slate-700">
-                            Total Records: <span className="text-indigo-600">{enquiries.length}</span>
+                        <span className="text-xs sm:text-sm font-semibold text-slate-700">
+                            Total: <span className="text-indigo-600">{enquiries.length}</span>
                         </span>
                     </div>
                 </div>
 
-                {/* Table Container */}
+                {/* Table Container - Scrollable on Mobile */}
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse whitespace-nowrap sm:whitespace-normal">
+                        <table className="w-full text-left border-collapse min-w-[800px]">
                             <thead>
-                                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider font-semibold">
-                                    <th className="px-6 py-5">User Info</th>
-                                    <th className="px-6 py-5">Subject & Message</th>
-                                    <th className="px-6 py-5">Received Date</th>
-                                    <th className="px-6 py-5 text-center">Actions</th>
+                                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider font-bold">
+                                    <th className="px-6 py-4">User Info</th>
+                                    <th className="px-6 py-4">Subject & Message</th>
+                                    <th className="px-6 py-4">Received Date</th>
+                                    <th className="px-6 py-4 text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {currentItems.length > 0 ? (
                                     currentItems.map((enquiry) => (
-                                        <tr key={enquiry._id} className="hover:bg-slate-50/80 transition-all group">
-                                            {/* User Info Column */}
+                                        <tr key={enquiry._id} className="hover:bg-slate-50/50 transition-colors group">
+                                            {/* User Info */}
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-indigo-700 font-bold text-sm shadow-inner shrink-0">
+                                                    <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs shrink-0">
                                                         {getInitials(enquiry.name)}
                                                     </div>
-                                                    <div className="flex flex-col min-w-[120px]">
-                                                        <span className="font-semibold text-slate-800">{enquiry.name}</span>
-                                                        <a href={`mailto:${enquiry.email}`} className="text-xs text-slate-500 hover:text-indigo-600 transition-colors">
-                                                            {enquiry.email}
-                                                        </a>
+                                                    <div className="flex flex-col max-w-[180px]">
+                                                        <span className="font-semibold text-slate-800 truncate">{enquiry.name}</span>
+                                                        <span className="text-xs text-slate-500 truncate">{enquiry.email}</span>
                                                     </div>
                                                 </div>
                                             </td>
 
-                                            {/* Subject & Message Column */}
-                                            <td className="px-6 py-4 max-w-[300px]">
+                                            {/* Subject & Message - Truncated to prevent break */}
+                                            <td className="px-6 py-4 max-w-md">
                                                 <div className="flex flex-col">
-                                                    <span className="text-slate-800 font-semibold truncate text-sm mb-0.5" title={enquiry.subject}>
+                                                    <span className="text-slate-800 font-semibold text-sm line-clamp-1">
                                                         {enquiry.subject}
                                                     </span>
-                                                    <span className="text-sm text-slate-500 truncate" title={enquiry.message}>
+                                                    <span className="text-xs text-slate-500 line-clamp-1 mt-0.5">
                                                         {enquiry.message}
                                                     </span>
                                                 </div>
                                             </td>
 
-                                            {/* Date Column */}
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2 text-sm text-slate-600">
-                                                    <Clock className="w-4 h-4 text-slate-400 shrink-0" />
+                                            {/* Date */}
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center gap-2 text-xs text-slate-600">
+                                                    <Clock className="w-3.5 h-3.5 text-slate-400" />
                                                     {formatDate(enquiry.createdAt)}
                                                 </div>
                                             </td>
 
-                                            {/* Actions Column */}
+                                            {/* Actions */}
                                             <td className="px-6 py-4">
-                                                <div className="flex justify-center items-center gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                                    {/* Quick Reply Action */}
-                                                    <a 
+                                                <div className="flex justify-center items-center gap-2">
+                                                    <a
                                                         href={`mailto:${enquiry.email}?subject=Re: ${enquiry.subject}`}
-                                                        className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 hover:scale-105 transition-all"
-                                                        title="Reply directly via Email"
+                                                        className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors"
+                                                        title="Reply"
                                                     >
                                                         <Reply className="w-4 h-4" />
                                                     </a>
-                                                    {/* View Detail Action */}
-                                                    <button 
+                                                    <button
                                                         onClick={() => setSelectedEnquiry(enquiry)}
-                                                        className="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 hover:scale-105 transition-all"
-                                                        title="View Full Details"
+                                                        className="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors"
                                                     >
                                                         <Eye className="w-4 h-4" />
                                                     </button>
-                                                    {/* Delete Action */}
-                                                    <button 
+                                                    <button
                                                         onClick={() => setEnquiryToDelete(enquiry._id)}
-                                                        className="p-2 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 hover:scale-105 transition-all"
-                                                        title="Delete Enquiry"
+                                                        className="p-2 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 transition-colors"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
                                                     </button>
@@ -211,16 +195,10 @@ export default function AdminEnquiry() {
                                         </tr>
                                     ))
                                 ) : (
-                                    /* Empty State UI */
                                     <tr>
-                                        <td colSpan="4" className="px-6 py-16 text-center">
-                                            <div className="flex flex-col items-center justify-center">
-                                                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                                                    <Mail className="w-10 h-10 text-slate-300" />
-                                                </div>
-                                                <h3 className="text-lg font-semibold text-slate-700">No Enquiries Found</h3>
-                                                <p className="text-slate-500 text-sm mt-1">You're all caught up! There are no new messages.</p>
-                                            </div>
+                                        <td colSpan="4" className="px-6 py-20 text-center">
+                                            <Mail className="w-12 h-12 text-slate-200 mx-auto mb-3" />
+                                            <p className="text-slate-500 font-medium">No messages found.</p>
                                         </td>
                                     </tr>
                                 )}
@@ -228,45 +206,40 @@ export default function AdminEnquiry() {
                         </table>
                     </div>
 
-                    {/* Pagination Footer */}
+                    {/* Pagination - Responsive Layout */}
                     {totalPages > 1 && (
-                        <div className="px-6 py-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-b-2xl">
-                            <span className="text-sm text-slate-500 font-medium">
-                                Showing <span className="text-slate-800">{indexOfFirstItem + 1}</span> to <span className="text-slate-800">{Math.min(indexOfLastItem, enquiries.length)}</span> of <span className="text-slate-800">{enquiries.length}</span> entries
+                        <div className="px-6 py-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <span className="text-xs text-slate-500 font-medium">
+                                Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, enquiries.length)} of {enquiries.length}
                             </span>
-                            
-                            <div className="flex gap-2">
-                                <button 
+                            <div className="flex items-center gap-1">
+                                <button
                                     disabled={currentPage === 1}
                                     onClick={() => setCurrentPage(prev => prev - 1)}
-                                    className="flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm font-medium shadow-sm"
+                                    className="p-2 rounded-lg border border-slate-200 disabled:opacity-50 hover:bg-slate-50"
                                 >
-                                    <ChevronLeft className="w-4 h-4" /> Prev
+                                    <ChevronLeft className="w-4 h-4" />
                                 </button>
-                                
-                                {/* Dynamic Page Numbers */}
-                                <div className="hidden sm:flex items-center gap-1 px-2">
+                                <div className="flex gap-1">
                                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                                         <button
                                             key={page}
                                             onClick={() => setCurrentPage(page)}
-                                            className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-all ${
-                                                currentPage === page 
-                                                ? "bg-indigo-600 text-white shadow-md" 
-                                                : "text-slate-600 hover:bg-slate-100"
-                                            }`}
+                                            className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${currentPage === page
+                                                    ? "bg-indigo-600 text-white shadow-sm"
+                                                    : "text-slate-600 hover:bg-slate-100"
+                                                }`}
                                         >
                                             {page}
                                         </button>
                                     ))}
                                 </div>
-
-                                <button 
+                                <button
                                     disabled={currentPage === totalPages}
                                     onClick={() => setCurrentPage(prev => prev + 1)}
-                                    className="flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm font-medium shadow-sm"
+                                    className="p-2 rounded-lg border border-slate-200 disabled:opacity-50 hover:bg-slate-50"
                                 >
-                                    Next <ChevronRight className="w-4 h-4" />
+                                    <ChevronRight className="w-4 h-4" />
                                 </button>
                             </div>
                         </div>
@@ -274,72 +247,65 @@ export default function AdminEnquiry() {
                 </div>
             </div>
 
-            {/* ========================================== */}
-            {/* View Message Modal */}
-            {/* ========================================== */}
+            {/* View Detail Modal - Fixed for Large Content */}
             {selectedEnquiry && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 transition-opacity">
-                    <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
-                        
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                    <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
                         {/* Modal Header */}
-                        <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
-                            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
+                            <h3 className="font-bold text-slate-800 flex items-center gap-2">
                                 <MessageSquare className="w-5 h-5 text-indigo-600" />
                                 Enquiry Details
                             </h3>
-                            <button 
-                                onClick={() => setSelectedEnquiry(null)}
-                                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
-                            >
-                                <X className="w-5 h-5" />
+                            <button onClick={() => setSelectedEnquiry(null)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                                <X className="w-5 h-5 text-slate-400" />
                             </button>
                         </div>
 
-                        {/* Modal Body */}
-                        <div className="p-6 space-y-5">
-                            {/* User details card */}
-                            <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                                <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-lg shadow-inner">
-                                    {getInitials(selectedEnquiry.name)}
+                        {/* Modal Body - Scrollable to prevent breaking */}
+                        <div className="p-6 space-y-5 overflow-y-auto max-h-[70vh]">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-lg">
+                                        {getInitials(selectedEnquiry.name)}
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-slate-800">{selectedEnquiry.name}</h4>
+                                        <p className="text-sm text-indigo-600 font-medium">{selectedEnquiry.email}</p>
+                                    </div>
                                 </div>
-                                <div className="flex-1">
-                                    <h4 className="text-slate-800 font-bold text-lg">{selectedEnquiry.name}</h4>
-                                    <p className="text-indigo-600 font-medium text-sm">{selectedEnquiry.email}</p>
-                                </div>
-                                <div className="text-right">
-                                    <span className="text-xs text-slate-400 font-medium uppercase tracking-wider block">Received On</span>
-                                    <span className="text-sm text-slate-600 font-medium block mt-0.5">{formatDate(selectedEnquiry.createdAt)}</span>
+                                <div className="sm:text-right">
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Received On</p>
+                                    <p className="text-sm text-slate-600 font-semibold">{formatDate(selectedEnquiry.createdAt)}</p>
                                 </div>
                             </div>
 
-                            {/* Message Content */}
                             <div>
-                                <h5 className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2 ml-1">Subject</h5>
-                                <div className="bg-white border border-slate-200 px-4 py-3 rounded-xl text-slate-800 font-semibold shadow-sm">
+                                <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block mb-1 ml-1">Subject</label>
+                                <div className="p-4 bg-white border border-slate-200 rounded-xl text-slate-800 font-bold text-sm sm:text-base break-words">
                                     {selectedEnquiry.subject}
                                 </div>
                             </div>
 
                             <div>
-                                <h5 className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-2 ml-1">Message</h5>
-                                <div className="bg-slate-50 border border-slate-200 p-5 rounded-2xl text-slate-700 whitespace-pre-wrap leading-relaxed min-h-[120px] shadow-inner text-sm sm:text-base">
+                                <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block mb-1 ml-1">Message Body</label>
+                                <div className="p-5 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 text-sm sm:text-base leading-relaxed whitespace-pre-wrap break-words min-h-[150px]">
                                     {selectedEnquiry.message}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Modal Footer (Actions) */}
-                        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-                            <button 
+                        {/* Modal Footer */}
+                        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                            <button
                                 onClick={() => setSelectedEnquiry(null)}
-                                className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors font-semibold text-sm shadow-sm"
+                                className="px-5 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
                             >
                                 Close
                             </button>
-                            {/* Direct Reach Out Button */}
-                            <a 
+                            <a
                                 href={`mailto:${selectedEnquiry.email}?subject=Re: ${selectedEnquiry.subject}`}
-                                className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-semibold text-sm shadow-sm flex items-center gap-2"
+                                className="px-5 py-2 text-sm font-bold bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors flex items-center gap-2 shadow-md shadow-indigo-100"
                             >
                                 <Reply className="w-4 h-4" />
                                 Reply via Email
@@ -349,37 +315,19 @@ export default function AdminEnquiry() {
                 </div>
             )}
 
-            {/* ========================================== */}
-            {/* Custom Delete Confirmation Modal */}
-            {/* ========================================== */}
+            {/* Delete Confirmation Modal */}
             {enquiryToDelete && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 transition-opacity">
-                    <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center transform transition-all animate-in fade-in zoom-in-95 duration-200">
-                        <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <AlertTriangle className="w-8 h-8 text-rose-600" />
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                    <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center">
+                        <div className="w-14 h-14 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <AlertTriangle className="w-7 h-7 text-rose-500" />
                         </div>
-                        <h3 className="text-xl font-bold text-slate-800 mb-2">Delete Enquiry?</h3>
-                        <p className="text-slate-500 text-sm mb-6">
-                            Are you sure you want to delete this message? This action cannot be undone and will remove it permanently.
-                        </p>
-                        <div className="flex gap-3 justify-center">
-                            <button 
-                                onClick={() => setEnquiryToDelete(null)}
-                                disabled={isDeleting}
-                                className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors font-semibold text-sm w-full"
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                onClick={confirmDelete}
-                                disabled={isDeleting}
-                                className="px-5 py-2.5 bg-rose-600 text-white rounded-xl hover:bg-rose-700 transition-colors font-semibold text-sm w-full flex items-center justify-center gap-2"
-                            >
-                                {isDeleting ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                    "Yes, Delete"
-                                )}
+                        <h3 className="text-lg font-bold text-slate-800">Delete Enquiry?</h3>
+                        <p className="text-sm text-slate-500 mt-2 mb-6">Are you sure? This action is permanent and cannot be undone.</p>
+                        <div className="flex gap-3">
+                            <button onClick={() => setEnquiryToDelete(null)} className="flex-1 px-4 py-2.5 text-sm font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors">Cancel</button>
+                            <button onClick={confirmDelete} className="flex-1 px-4 py-2.5 text-sm font-bold bg-rose-600 text-white hover:bg-rose-700 rounded-xl transition-colors flex items-center justify-center gap-2">
+                                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete"}
                             </button>
                         </div>
                     </div>
