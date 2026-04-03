@@ -35,7 +35,9 @@ export default function EditorDecisionDashboard() {
   const canRecommendAccept = acceptCount >= 2;
 
   // Prevent changes if already sent to Admin
-  const isLocked = selectedPaper?.status === "Awaiting Admin Decision";
+  const isLocked =
+    selectedPaper?.status === "Awaiting Admin Decision" ||
+    selectedPaper?.status === "Published";
 
   // Logic to handle reviewer assignment
   const handleAssignReviewer = async () => {
@@ -61,7 +63,9 @@ export default function EditorDecisionDashboard() {
     formData.append("manuscriptId", selectedPaper._id);
     formData.append("status", actionData.status);
     formData.append("feedback", actionData.feedback);
-    if (actionData.file) formData.append("feedbackFile", actionData.file);
+    if (actionData.file) {
+      formData.append("feedbackFile", actionData.file);
+    }
 
     try {
       await updateStatus(formData).unwrap();
@@ -359,11 +363,13 @@ export default function EditorDecisionDashboard() {
 
 
                         {/*  SHOW ONLY WHEN REVISION REQUIRED */}
-                        {actionData.status === "Revision Required" && (
+                        {["Revision Required", "Rejected"].includes(actionData.status) && (
                           <div className="space-y-3 animate-fadeIn">
 
                             <label className="text-xs font-bold text-indigo-600 ml-1">
-                              Upload Revision File (Required)
+                              {actionData.status === "Rejected"
+                                ? "Upload Rejection Document (optional)"
+                                : "Upload Revision File (optional)"}
                             </label>
 
                             <div className="relative border-2 border-dashed border-indigo-200 rounded-2xl p-6 bg-indigo-50/40 hover:bg-indigo-50 transition-all group cursor-pointer">
@@ -399,7 +405,7 @@ export default function EditorDecisionDashboard() {
                           className="w-full bg-indigo-600 text-white py-5 rounded-[20px] font-black text-sm hover:shadow-2xl hover:shadow-indigo-200 flex items-center justify-center gap-3"
                         >
                           {isUpdating ? <Icons.Loader2 className="animate-spin" /> : <Icons.ShieldCheck size={20} />}
-                          Send Decision to Admin
+                          Send Decision
                         </button>
                       </form>
                     </div>

@@ -1,8 +1,12 @@
 "use client";
 
 import Sidebar from "../../../components/dashboard/Sidebar";
+import useRoleGuard from "../../../hooks/useRoleGuard";
 
 export default function EditorDashboardLayout({ children }) {
+  const authorized = useRoleGuard("editor");
+  //Prevent Flash
+  if (!authorized) return null;
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans">
 

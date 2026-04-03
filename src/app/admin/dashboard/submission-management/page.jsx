@@ -171,7 +171,7 @@ export default function SubmissionManagement() {
                   <td className="px-6 py-4 text-sm text-slate-800 font-medium max-w-xs truncate" title={sub.title}>{sub.title}</td>
                   <td className="px-6 py-4 text-sm text-slate-600">{sub.submittedBy?.name || "N/A"}</td>
                   <td className="px-6 py-4 text-center">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(sub.status)}`}>
+                    <span className={`flex items-center justify-center flex-wrap  px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(sub.status)}`}>
                       {sub.status}
                     </span>
                   </td>

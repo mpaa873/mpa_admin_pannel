@@ -22,7 +22,6 @@ export const SIDEBAR_LINKS = [
   { name: "Review & Decisions", href: "/admin/dashboard/review-decision", icon: "GitCompare" },
   { name: "Submission Management", href: "/admin/dashboard/submission-management", icon: "Settings" },
   { name: "Submissions", href: "/admin/dashboard/submissions", icon: "FileText" },
-  { name: "Board Management", href: "/admin/dashboard/boards", icon: "ShieldCheck" },
   { name: "Activity Center", href: "/admin/dashboard/activity", icon: "Bell" },
   { name: "Researcher Management", href: "/admin/dashboard/researcher", icon: "UsersRound" }
 ];
@@ -38,7 +37,5 @@ export const EDITOR_SIDEBAR_LINKS = [
 export const REVIEWER_SIDEBAR_LINKS = [
   { name: "Reviewer Dashboard", href: "/reviewer/dashboard", icon: "LayoutDashboard" },
   { name: "Assigned Papers", href: "/reviewer/dashboard/papers", icon: "FileText" },
-  { name: "Submit Review", href: "/reviewer/dashboard/reviews", icon: "ClipboardCheck" },
   { name: "Activity", href: "/reviewer/dashboard/activity", icon: "BellRing" },
-  { name: "Messages", href: "/reviewer/dashboard/messages", icon: "Mail" },
 ];

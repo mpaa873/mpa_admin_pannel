@@ -12,6 +12,9 @@ export default function AdminReviewTracking() {
   const [actionData, setActionData] = useState({ status: "", feedback: "", file: null, publishDate: "" });
   const [selectedReviewers, setSelectedReviewers] = useState([]);
 
+  // Check if the current paper is already Published or Rejected to lock editing
+  const isFinalized = ["Published", "Rejected"].includes(selectedManuscript?.manuscript?.status);
+
   // 2. Fetch tracking data from backend
   const { data, isLoading, refetch } = useGetAdminReviewTrackingQuery();
 
@@ -87,7 +90,7 @@ export default function AdminReviewTracking() {
     e.preventDefault();
     if (!actionData.status) return toast.error("Please select a status first.");
 
-    if (["Accepted", "Published"].includes(actionData.status) && !canAcceptOrPublish) {
+    if (["Accepted", "Published", "Approved"].includes(actionData.status) && !canAcceptOrPublish) {
       return toast.error("You need at least 2 'Accept' recommendations to Accept or Publish.");
     }
 
@@ -112,9 +115,9 @@ export default function AdminReviewTracking() {
     try {
       await updateStatus(formData).unwrap();
       toast.success(`Manuscript status successfully updated to ${actionData.status}`);
-      setSelectedManuscript(null); 
-      setActionData({ status: "", feedback: "", file: null, publishDate: "" }); 
-      refetch(); 
+      setSelectedManuscript(null);
+      setActionData({ status: "", feedback: "", file: null, publishDate: "" });
+      refetch();
     } catch (error) {
       toast.error(error?.data?.message || "Failed to update manuscript status.");
     }
@@ -150,6 +153,7 @@ export default function AdminReviewTracking() {
         {data?.reviews?.map((item) => {
           const compCount = item.reviewers.filter((r) => r.reviewStatus === "Completed").length;
           const totalReviewers = item.reviewers.length;
+          const isPaperDone = ["Published", "Rejected"].includes(item.manuscript.status);
 
           return (
             <div key={item._id} className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 shadow-sm hover:shadow-md transition-all">
@@ -187,10 +191,13 @@ export default function AdminReviewTracking() {
 
                 <button
                   onClick={() => setSelectedManuscript(item)}
-                  className="bg-blue-600 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/30 transition-all flex items-center gap-2"
+                  className={`px-6 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2 
+                    ${isPaperDone
+                      ? "bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200"
+                      : "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/30"}`}
                 >
-                  <Icons.LayoutDashboard size={18} />
-                  Evaluate & Act
+                  {isPaperDone ? <Icons.FileSearch size={18} /> : <Icons.LayoutDashboard size={18} />}
+                  {isPaperDone ? "View Record" : "Evaluate & Act"}
                 </button>
               </div>
             </div>
@@ -225,33 +232,50 @@ export default function AdminReviewTracking() {
             <div className="flex flex-col lg:flex-row flex-1 overflow-hidden bg-slate-50">
 
               <div className="flex-1 overflow-y-auto p-6 space-y-8">
-                
-                {/* NEW SECTION: EDITOR'S RECOMMENDATION SUMMARY */}
-                <div className="bg-white border-l-4 border-indigo-500 rounded-2xl shadow-sm p-6">
-                   <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 mb-4">
-                      <Icons.UserCog size={22} className="text-indigo-600" /> Editor's Preliminary Recommendation
-                   </h3>
-                   
-                   <div className="flex flex-col md:flex-row gap-6">
-                      <div className="shrink-0">
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Suggested Status</p>
-                         <div className={`px-4 py-2 rounded-xl text-sm font-black inline-block
-                            ${selectedManuscript.manuscript.editorRecommendation ? 'bg-indigo-50 text-indigo-700 border border-indigo-100' : 'bg-slate-100 text-slate-500 italic font-medium'}`}>
-                            {selectedManuscript.manuscript.editorRecommendation || "No recommendation submitted yet"}
-                         </div>
-                      </div>
 
-                      <div className="flex-1">
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Editor's Internal Comments</p>
-                         <div className="bg-slate-50 rounded-xl p-4 text-sm text-slate-700 font-medium border border-slate-100 italic leading-relaxed">
-                            {selectedManuscript.manuscript.editorInternalComments ? (
-                               `"${selectedManuscript.manuscript.editorInternalComments}"`
-                            ) : (
-                               "Editor has not provided any internal notes for the admin yet."
-                            )}
-                         </div>
+                {/* EDITOR'S RECOMMENDATION SUMMARY */}
+                {selectedManuscript?.manuscript?.feedbackFile && (
+                  <div className="mt-4">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                      Editor Attachment
+                    </p>
+
+                    <a
+                      href={selectedManuscript?.manuscript?.feedbackFile}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-3 rounded-xl text-sm font-bold transition-all border border-indigo-100"
+                    >
+                      <Icons.Download size={16} />
+                      Download Editor Document
+                    </a>
+                  </div>
+                )}
+                <div className="bg-white border-l-4 border-indigo-500 rounded-2xl shadow-sm p-6">
+                  <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 mb-4">
+                    <Icons.UserCog size={22} className="text-indigo-600" /> Editor's Preliminary Recommendation
+                  </h3>
+
+                  <div className="flex flex-col md:flex-row gap-6">
+                    <div className="shrink-0">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Suggested Status</p>
+                      <div className={`px-4 py-2 rounded-xl text-sm font-black inline-block
+                            ${selectedManuscript.manuscript.editorRecommendation ? 'bg-indigo-50 text-indigo-700 border border-indigo-100' : 'bg-slate-100 text-slate-500 italic font-medium'}`}>
+                        {selectedManuscript.manuscript.editorRecommendation || "No recommendation submitted yet"}
                       </div>
-                   </div>
+                    </div>
+
+                    <div className="flex-1">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Editor's Internal Comments</p>
+                      <div className="bg-slate-50 rounded-xl p-4 text-sm text-slate-700 font-medium border border-slate-100 italic leading-relaxed">
+                        {selectedManuscript.manuscript.editorInternalComments ? (
+                          `"${selectedManuscript.manuscript.editorInternalComments}"`
+                        ) : (
+                          "Editor has not provided any internal notes for the admin yet."
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* REVIEWERS GRID */}
@@ -361,6 +385,7 @@ export default function AdminReviewTracking() {
                 </div>
               </div>
 
+              {/* RIGHT SIDE ADMINISTRATIVE PANEL */}
               <div className="w-full lg:w-[450px] bg-slate-100 border-l border-slate-200 flex flex-col shadow-[-10px_0_20px_rgba(0,0,0,0.03)] z-10">
                 <div className="p-6 border-b border-slate-200 bg-white">
                   <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
@@ -370,155 +395,217 @@ export default function AdminReviewTracking() {
 
                 <div className="p-6 flex-1 overflow-y-auto space-y-6">
 
-                  {!canAcceptOrPublish && (
-                    <div className="bg-rose-50 border border-rose-200 text-rose-800 p-4 rounded-xl flex gap-3 shadow-sm items-start">
-                      <Icons.ShieldAlert size={20} className="shrink-0 text-rose-600 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-bold text-rose-700">Action Restricted</p>
-                        <p className="text-xs text-rose-600 mt-1">
-                          You need at least <strong>2 'Accept' recommendations</strong> from reviewers to Accept or Publish. <br />
-                          Currently, you have <strong>{acceptedRecommendationCount}</strong> 'Accept' out of {totalCompletedReviews} completed reviews.
-                        </p>
+                  {/* LOCKED VIEW: Shows when paper is already Published or Rejected */}
+                  {isFinalized ? (
+                    <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
+                      <div className={`p-6 rounded-2xl border-2 flex flex-col items-center text-center space-y-3
+                        ${selectedManuscript.manuscript.status === 'Published'
+                          ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                          : 'bg-rose-50 border-rose-200 text-rose-800'}`}>
+                        <div className={`p-4 rounded-full ${selectedManuscript.manuscript.status === 'Published' ? 'bg-emerald-500' : 'bg-rose-500'} text-white shadow-xl ring-8 ring-white`}>
+                          {selectedManuscript.manuscript.status === 'Published' ? <Icons.ShieldCheck size={40} /> : <Icons.Archive size={40} />}
+                        </div>
+                        <div>
+                          <h4 className="text-2xl font-black uppercase tracking-tight italic">Case Closed</h4>
+                          <p className="text-sm font-bold opacity-80 mt-1">
+                            Final Decision: {selectedManuscript.manuscript.status}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                        <h5 className="font-bold text-slate-800 border-b pb-2 flex items-center gap-2">
+                          <Icons.History size={18} className="text-slate-500" /> Decision Record
+                        </h5>
+
+                        <div className="space-y-4 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-slate-400 font-bold uppercase text-[10px]">Reference ID</span>
+                            <span className="font-bold text-slate-700">{selectedManuscript.manuscript.manuscriptId}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-400 font-bold uppercase text-[10px]">Decision Date</span>
+                            <span className="font-bold text-slate-700">
+                              {new Date(selectedManuscript.manuscript.updatedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}
+                            </span>
+                          </div>
+                          <div className="pt-4 border-t border-slate-100">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Final Summary</p>
+                            <p className="p-3 bg-slate-50 rounded-lg text-slate-600 italic border border-slate-100">
+                              {selectedManuscript.manuscript.editorInternalComments || "Process complete. This record is archived."}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-6">
+                          <button disabled className="w-full py-4 bg-slate-100 text-slate-400 rounded-xl font-black text-sm flex items-center justify-center gap-2 cursor-not-allowed border-2 border-dashed border-slate-200">
+                            <Icons.Lock size={18} /> RECORD LOCKED
+                          </button>
+                          <p className="text-[10px] text-center text-slate-400 mt-3 leading-tight">
+                            Published or rejected papers cannot be modified.
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  )}
-
-                  <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                    <h4 className="font-bold text-slate-800 mb-4 border-b pb-2 flex items-center gap-2">
-                      <Icons.CheckCircle size={18} className="text-slate-600" /> Final Decision
-                    </h4>
-
-                    <form onSubmit={handleActionSubmit} className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Final Status</label>
-                        <select
-                          required
-                          value={actionData.status}
-                          onChange={(e) => setActionData({ ...actionData, status: e.target.value })}
-                          className="w-full bg-slate-50 border border-slate-300 text-slate-800 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer appearance-none"
-                        >
-                          <option value="">-- Select Decision --</option>
-                          <option value="Revision Required">Request Revision (Minor/Major)</option>
-                          <option value="Rejected">Reject Manuscript</option>
-
-                          {canAcceptOrPublish ? (
-                            <>
-                              <option value="Accepted">Accept Manuscript (Schedule Publish)</option>
-                              <option value="Published">Publish Now (Immediate)</option>
-                            </>
-                          ) : (
-                            <optgroup label="Needs 2 'Accept' Recommendations">
-                              <option value="Accepted" disabled>Accept Manuscript (Disabled)</option>
-                              <option value="Published" disabled>Publish Now (Disabled)</option>
-                            </optgroup>
-                          )}
-                        </select>
-                      </div>
-
-                      {actionData.status === "Accepted" && (
-                        <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                          <label className="block text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                            <Icons.CalendarClock size={16} /> Schedule Publication Date
-                          </label>
-                          <input
-                            type="datetime-local"
-                            required
-                            value={actionData.publishDate}
-                            onChange={(e) => setActionData({ ...actionData, publishDate: e.target.value })}
-                            className="w-full bg-emerald-50/50 border border-emerald-200 text-slate-700 font-medium rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-                          />
+                  ) : (
+                    /* EDITABLE VIEW: Shows when paper is still in progress */
+                    <>
+                      {!canAcceptOrPublish && (
+                        <div className="bg-rose-50 border border-rose-200 text-rose-800 p-4 rounded-xl flex gap-3 shadow-sm items-start">
+                          <Icons.ShieldAlert size={20} className="shrink-0 text-rose-600 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-bold text-rose-700">Action Restricted</p>
+                            <p className="text-xs text-rose-600 mt-1">
+                              You need at least <strong>2 'Accept' recommendations</strong> to Accept or Publish. <br />
+                              Currently: <strong>{acceptedRecommendationCount}</strong> 'Accept'.
+                            </p>
+                          </div>
                         </div>
                       )}
 
-                      {['Revision Required', 'Rejected'].includes(actionData.status) && (
-                        <div className="space-y-4 animate-in fade-in duration-300">
+                      <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                        <h4 className="font-bold text-slate-800 mb-4 border-b pb-2 flex items-center gap-2">
+                          <Icons.CheckCircle size={18} className="text-slate-600" /> Final Decision
+                        </h4>
+
+                        <form onSubmit={handleActionSubmit} className="space-y-4">
                           <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Message to Author</label>
-                            <textarea
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Final Status</label>
+                            <select
                               required
-                              rows={5}
-                              value={actionData.feedback}
-                              onChange={(e) => setActionData({ ...actionData, feedback: e.target.value })}
-                              placeholder="Paste the final summarized feedback here..."
-                              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                            />
+                              value={actionData.status}
+                              onChange={(e) => setActionData({ ...actionData, status: e.target.value })}
+                              className="w-full bg-slate-50 border border-slate-300 text-slate-800 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer appearance-none"
+                            >
+                              <option value="">-- Select Decision --</option>
+                              <option value="Revision Required">Request Revision (Minor/Major)</option>
+                              <option value="Rejected">Reject Manuscript</option>
+
+                              {canAcceptOrPublish ? (
+                                <>
+                                  <option value="Approved">Approve (Accept Only)</option>
+                                  <option value="Accepted">Schedule Manuscript (Schedule Publish)</option>
+                                  <option value="Published">Publish Now (Immediate)</option>
+                                </>
+                              ) : (
+                                <optgroup label="Needs 2 'Accept' Recommendations">
+                                  <option value="Approved" disabled>Approve (Disabled)</option>
+                                  <option value="Accepted" disabled>Accept Manuscript (Disabled)</option>
+                                  <option value="Published" disabled>Publish Now (Disabled)</option>
+                                </optgroup>
+                              )}
+                            </select>
                           </div>
 
-                          <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Attach File (Optional)</label>
-                            <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 bg-slate-50 text-center hover:bg-slate-100 transition-colors cursor-pointer relative">
+                          {actionData.status === "Accepted" && (
+                            <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                              <label className="block text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                                <Icons.CalendarClock size={16} /> Schedule Publication Date
+                              </label>
                               <input
-                                type="file"
-                                onChange={(e) => setActionData({ ...actionData, file: e.target.files[0] })}
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                type="datetime-local"
+                                required
+                                value={actionData.publishDate}
+                                onChange={(e) => setActionData({ ...actionData, publishDate: e.target.value })}
+                                className="w-full bg-emerald-50/50 border border-emerald-200 text-slate-700 font-medium rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
                               />
-                              <div className="flex flex-col items-center gap-1">
-                                <Icons.UploadCloud size={20} className="text-slate-400" />
-                                <span className="text-xs font-bold text-slate-600">
-                                  {actionData.file ? actionData.file.name : "Click to upload feedback file"}
-                                </span>
+                            </div>
+                          )}
+
+                          {['Revision Required', 'Rejected'].includes(actionData.status) && (
+                            <div className="space-y-4 animate-in fade-in duration-300">
+                              <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Message to Author</label>
+                                <textarea
+                                  required
+                                  rows={5}
+                                  value={actionData.feedback}
+                                  onChange={(e) => setActionData({ ...actionData, feedback: e.target.value })}
+                                  placeholder="Paste the final summarized feedback here..."
+                                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Attach File (Optional)</label>
+                                <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 bg-slate-50 text-center hover:bg-slate-100 transition-colors cursor-pointer relative">
+                                  <input
+                                    type="file"
+                                    onChange={(e) => setActionData({ ...actionData, file: e.target.files[0] })}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                  />
+                                  <div className="flex flex-col items-center gap-1">
+                                    <Icons.UploadCloud size={20} className="text-slate-400" />
+                                    <span className="text-xs font-bold text-slate-600">
+                                      {actionData.file ? actionData.file.name : "Click to upload feedback file"}
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </div>
-                      )}
+                          )}
 
-                      <button
-                        disabled={isUpdating}
-                        type="submit"
-                        className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black py-3 rounded-xl hover:opacity-90 transition-all disabled:opacity-50 flex justify-center items-center gap-2 text-sm mt-2 shadow-md hover:shadow-lg hover:shadow-blue-500/30"
-                      >
-                        {isUpdating ? <Icons.Loader2 size={18} className="animate-spin" /> : <Icons.Check size={18} />}
-                        {isUpdating ? "Processing..." : actionData.status === "Accepted" ? "Accept & Schedule Publish" : "Submit Decision"}
-                      </button>
-                    </form>
-                  </div>
-
-                  <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 mt-4">
-                    <h4 className="font-bold text-slate-800 mb-2 border-b pb-2 flex items-center gap-2">
-                      <Icons.UserPlus size={18} className="text-indigo-600" /> Assign / Re-assign Reviewer
-                    </h4>
-                    <div className="flex flex-col gap-3">
-                      <div className="space-y-3">
-                        <div className="flex flex-wrap gap-2 min-h-[40px]">
-                          {selectedReviewers.map((id) => {
-                            const reviewer = reviewerOptionsData?.reviewers.find(r => r._id === id);
-                            return (
-                              <div key={id} className="flex items-center gap-2 bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-semibold">
-                                {reviewer?.name}
-                                <button onClick={() => setSelectedReviewers(prev => prev.filter(r => r !== id))} className="hover:text-red-500">
-                                  <Icons.X size={12} />
-                                </button>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        <select
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (!value) return;
-                            if (selectedReviewers.includes(value)) return toast.error("Already selected");
-                            setSelectedReviewers([...selectedReviewers, value]);
-                          }}
-                          className="w-full bg-white border border-slate-300 rounded-xl px-3 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                        >
-                          <option value="">{isReviewersLoading ? "Loading reviewers..." : "Add Reviewer"}</option>
-                          {reviewerOptionsData?.reviewers?.map((reviewer) => (
-                            <option key={reviewer._id} value={reviewer._id}>{reviewer.name} ({reviewer.email})</option>
-                          ))}
-                        </select>
+                          <button
+                            disabled={isUpdating}
+                            type="submit"
+                            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black py-3 rounded-xl hover:opacity-90 transition-all disabled:opacity-50 flex justify-center items-center gap-2 text-sm mt-2 shadow-md hover:shadow-lg hover:shadow-blue-500/30"
+                          >
+                            {isUpdating ? <Icons.Loader2 size={18} className="animate-spin" /> : <Icons.Check size={18} />}
+                            {isUpdating ? "Processing..." : actionData.status === "Accepted"
+                              ? "Accept & Schedule Publish"
+                              : actionData.status === "Approved"
+                                ? "Approve Manuscript"
+                                : "Submit Decision"}
+                          </button>
+                        </form>
                       </div>
 
-                      <button
-                        onClick={handleAssignNewReviewer}
-                        disabled={isAssigning || selectedReviewers.length < 2 || isReviewersLoading || reviewerOptionsData?.reviewers?.length === 0}
-                        className="w-full bg-slate-900 text-white font-bold py-2.5 rounded-lg hover:bg-slate-800 transition-all disabled:opacity-50 flex justify-center gap-2 text-sm"
-                      >
-                        {isAssigning ? <Icons.Loader2 size={16} className="animate-spin" /> : "Send Reviewer Invitation"}
-                      </button>
-                    </div>
-                  </div>
+                      <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 mt-4">
+                        <h4 className="font-bold text-slate-800 mb-2 border-b pb-2 flex items-center gap-2">
+                          <Icons.UserPlus size={18} className="text-indigo-600" /> Assign Reviewer
+                        </h4>
+                        <div className="flex flex-col gap-3">
+                          <div className="space-y-3">
+                            <div className="flex flex-wrap gap-2 min-h-[40px]">
+                              {selectedReviewers.map((id) => {
+                                const reviewer = reviewerOptionsData?.reviewers.find(r => r._id === id);
+                                return (
+                                  <div key={id} className="flex items-center gap-2 bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-semibold">
+                                    {reviewer?.name}
+                                    <button onClick={() => setSelectedReviewers(prev => prev.filter(r => r !== id))} className="hover:text-red-500">
+                                      <Icons.X size={12} />
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <select
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (!value) return;
+                                if (selectedReviewers.includes(value)) return toast.error("Already selected");
+                                setSelectedReviewers([...selectedReviewers, value]);
+                              }}
+                              className="w-full bg-white border border-slate-300 rounded-xl px-3 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                            >
+                              <option value="">{isReviewersLoading ? "Loading..." : "Add Reviewer"}</option>
+                              {reviewerOptionsData?.reviewers?.map((reviewer) => (
+                                <option key={reviewer._id} value={reviewer._id}>{reviewer.name}</option>
+                              ))}
+                            </select>
+                          </div>
 
+                          <button
+                            onClick={handleAssignNewReviewer}
+                            disabled={isAssigning || selectedReviewers.length < 2 || isReviewersLoading}
+                            className="w-full bg-slate-900 text-white font-bold py-2.5 rounded-lg hover:bg-slate-800 transition-all disabled:opacity-50 flex justify-center gap-2 text-sm"
+                          >
+                            {isAssigning ? <Icons.Loader2 size={16} className="animate-spin" /> : "Send Invitation"}
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
