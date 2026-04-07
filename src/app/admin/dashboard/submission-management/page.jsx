@@ -4,7 +4,10 @@ import {
   useGetAllSubmissionsQuery,
   useDeleteManuscriptAdminMutation,
   useEditManuscriptAdminMutation,
+  useToggleEditorChoiceMutation
 } from "../../../../services/manuscriptApi";
+import toast from "react-hot-toast";
+import { Star } from "lucide-react";
 
 // --- PROFESSIONAL SVG ICONS ---
 const EditIcon = () => (
@@ -62,8 +65,30 @@ export default function SubmissionManagement() {
   const { data, isLoading, isError, refetch } = useGetAllSubmissionsQuery({ page, limit });
   const [deleteManuscript, { isLoading: isDeleting }] = useDeleteManuscriptAdminMutation();
   const [editManuscript, { isLoading: isEditing }] = useEditManuscriptAdminMutation();
-
+  const [toggleEditorChoice] = useToggleEditorChoiceMutation();
   // --- HANDLERS ---
+
+  //Handle Toogle toggleEditorChoice
+  const handleToggleEditorChoice = async (id, currentState) => {
+    const loadingToast = toast.loading("Updating Editor Choice...");
+
+    try {
+      await toggleEditorChoice(id).unwrap();
+
+      toast.dismiss(loadingToast);
+
+      toast.success(
+        currentState
+          ? "Removed from Editor’s Choice"
+          : "Marked as Editor’s Choice "
+      );
+
+      refetch();
+    } catch (err) {
+      toast.dismiss(loadingToast);
+      toast.error(err?.data?.message || "Something went wrong");
+    }
+  };
 
   // Handle View (Read-Only)
   const handleOpenView = (manuscript) => {
@@ -100,8 +125,12 @@ export default function SubmissionManagement() {
 
   const handleSaveChanges = async (e) => {
     e.preventDefault();
+
+    const loadingToast = toast.loading("Updating manuscript...");
+
     try {
       const submitData = new FormData();
+
       submitData.append("title", formData.title);
       submitData.append("discipline", formData.discipline);
       submitData.append("manuscriptType", formData.manuscriptType);
@@ -110,14 +139,27 @@ export default function SubmissionManagement() {
       submitData.append("authors", JSON.stringify(formData.authors));
 
       Object.keys(newFiles).forEach((key) => {
-        if (newFiles[key]) submitData.append(key, newFiles[key]);
+        if (newFiles[key]) {
+          submitData.append(key, newFiles[key]);
+        }
       });
 
-      await editManuscript({ id: selectedManuscript._id, formData: submitData }).unwrap();
+      await editManuscript({
+        id: selectedManuscript._id,
+        formData: submitData,
+      }).unwrap();
+
+      toast.dismiss(loadingToast);
+
+      toast.success("Updated successfully ");
+
       setIsEditModalOpen(false);
       refetch();
+
     } catch (error) {
-      alert("Update failed: " + (error?.data?.message || "Error"));
+      toast.dismiss(loadingToast);
+
+      toast.error(error?.data?.message || "Update failed ");
     }
   };
 
@@ -161,6 +203,7 @@ export default function SubmissionManagement() {
                 <th className="px-6 py-4">Title</th>
                 <th className="px-6 py-4">Submitted By</th>
                 <th className="px-6 py-4 text-center">Status</th>
+                <th className="px-6 py-4 text-center text-amber-600">Choice</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -174,6 +217,40 @@ export default function SubmissionManagement() {
                     <span className={`flex items-center justify-center flex-wrap  px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(sub.status)}`}>
                       {sub.status}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <button
+                      onClick={() => handleToggleEditorChoice(sub._id, sub.isEditorChoice)}
+                      disabled={sub.status !== "Published"}
+                      className={`
+      relative group inline-flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-500
+      ${sub.status !== "Published" ? "opacity-20 cursor-not-allowed" : "cursor-pointer"}
+      ${sub.isEditorChoice
+                          ? "bg-amber-50 border-amber-200 shadow-sm"
+                          : "bg-slate-50 border-transparent hover:border-slate-200"}
+      border-2
+    `}
+                      title={sub.status !== "Published" ? "Only Published manuscripts can be Editor's Choice" : "Toggle Choice"}
+                    >
+                      <Star
+                        size={18}
+                        className={`transition-all duration-500 ${sub.isEditorChoice
+                          ? "fill-amber-500 text-amber-500 scale-110 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]"
+                          : "text-slate-300 group-hover:text-slate-400"
+                          }`}
+                      />
+
+                      {/* Chota sa Indicator Text */}
+                      <span className={`text-[8px] mt-1 font-bold uppercase tracking-widest transition-colors ${sub.isEditorChoice ? "text-amber-700" : "text-slate-400"
+                        }`}>
+                        {sub.isEditorChoice ? "Editor's Choice" : "Mark Choice"}
+                      </span>
+
+                      {/* Soft Glow effect for active items */}
+                      {sub.isEditorChoice && (
+                        <span className="absolute inset-0 rounded-xl border-amber-400 animate-pulse opacity-40"></span>
+                      )}
+                    </button>
                   </td>
                   <td className="px-6 py-4 text-right flex justify-end gap-2">
                     <button onClick={() => handleOpenView(sub)} className="p-2 text-slate-600 hover:bg-white hover:text-indigo-600 rounded-lg border border-transparent hover:border-slate-200 transition" title="View Details">
@@ -321,9 +398,19 @@ export default function SubmissionManagement() {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Type</label>
-                    <select value={formData.manuscriptType} onChange={e => setFormData({ ...formData, manuscriptType: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none transition">
-                      <option value="research">Research Article</option>
-                      <option value="review">Review Article</option>
+                    <select
+                      value={formData.manuscriptType}
+                      onChange={(e) =>
+                        setFormData({ ...formData, manuscriptType: e.target.value })
+                      }
+                    >
+                      <option value="Research Article">Research Article</option>
+                      <option value="Review Article">Review Article</option>
+                      <option value="Mini Review">Mini Review</option>
+                      <option value="Systematic Review">Systematic Review</option>
+                      <option value="Short Communication">Short Communication</option>
+                      <option value="Case Report">Case Report</option>
+                      <option value="Editorial">Editorial</option>
                     </select>
                   </div>
                   <div className="md:col-span-2">
@@ -340,18 +427,65 @@ export default function SubmissionManagement() {
                     <button type="button" onClick={() => setFormData({ ...formData, authors: [...formData.authors, { name: '', email: '', affiliation: '' }] })} className="text-xs font-bold text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg border border-indigo-200 transition">+ Add Author</button>
                   </div>
                   {formData.authors.map((auth, idx) => (
-                    <div key={idx} className="p-4 border border-slate-200 rounded-xl grid grid-cols-1 md:grid-cols-3 gap-4 relative">
-                      <input type="text" placeholder="Name" value={auth.name} onChange={e => {
-                        const updated = [...formData.authors]; updated[idx].name = e.target.value; setFormData({ ...formData, authors: updated });
-                      }} className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
-                      <input type="email" placeholder="Email" value={auth.email} onChange={e => {
-                        const updated = [...formData.authors]; updated[idx].email = e.target.value; setFormData({ ...formData, authors: updated });
-                      }} className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+                    <div
+                      key={idx}
+                      className="p-4 border border-slate-200 rounded-xl grid grid-cols-1 md:grid-cols-3 gap-4 relative"
+                    >
+                      {/* NAME */}
+                      <input
+                        type="text"
+                        placeholder="Name"
+                        value={auth.name}
+                        onChange={(e) => {
+                          const updated = formData.authors.map((author, i) =>
+                            i === idx ? { ...author, name: e.target.value } : author
+                          );
+                          setFormData({ ...formData, authors: updated });
+                        }}
+                        className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm"
+                      />
+
+                      {/* EMAIL */}
+                      <input
+                        type="email"
+                        placeholder="Email"
+                        value={auth.email}
+                        onChange={(e) => {
+                          const updated = formData.authors.map((author, i) =>
+                            i === idx ? { ...author, email: e.target.value } : author
+                          );
+                          setFormData({ ...formData, authors: updated });
+                        }}
+                        className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm"
+                      />
+
+                      {/* AFFILIATION */}
                       <div className="flex gap-2">
-                        <input type="text" placeholder="Affiliation" value={auth.affiliation} onChange={e => {
-                          const updated = [...formData.authors]; updated[idx].affiliation = e.target.value; setFormData({ ...formData, authors: updated });
-                        }} className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
-                        <button type="button" onClick={() => setFormData({ ...formData, authors: formData.authors.filter((_, i) => i !== idx) })} className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition"><TrashIcon /></button>
+                        <input
+                          type="text"
+                          placeholder="Affiliation"
+                          value={auth.affiliation}
+                          onChange={(e) => {
+                            const updated = formData.authors.map((author, i) =>
+                              i === idx ? { ...author, affiliation: e.target.value } : author
+                            );
+                            setFormData({ ...formData, authors: updated });
+                          }}
+                          className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm"
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFormData({
+                              ...formData,
+                              authors: formData.authors.filter((_, i) => i !== idx),
+                            })
+                          }
+                          className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition"
+                        >
+                          <TrashIcon />
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -375,8 +509,20 @@ export default function SubmissionManagement() {
 
             <div className="p-6 border-t flex justify-end gap-4 bg-slate-50">
               <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-6 py-2.5 rounded-xl border border-slate-300 font-bold text-slate-600 hover:bg-white transition">Cancel</button>
-              <button type="submit" form="editForm" disabled={isEditing} className="px-8 py-2.5 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition disabled:opacity-50">
-                {isEditing ? "Saving Changes..." : "Save All Updates"}
+              <button
+                type="submit"
+                form="editForm"
+                disabled={isEditing}
+                className="px-8 py-2.5 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isEditing ? (
+                  <>
+                    <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                    Updating...
+                  </>
+                ) : (
+                  "Save All Updates"
+                )}
               </button>
             </div>
           </div>

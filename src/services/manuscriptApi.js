@@ -19,6 +19,7 @@ export const manuscriptApi = baseApi.injectEndpoints({
         getAllSubmissions: builder.query({
             query: ({ page = 1, limit = 10 } = {}) =>
                 `/manuscripts/admin/all?page=${page}&limit=${limit}`,
+            providesTags: ["Manuscripts"],
         }),
 
         assignEditor: builder.mutation({
@@ -84,6 +85,13 @@ export const manuscriptApi = baseApi.injectEndpoints({
             query: (id) => `/manuscripts/${id}`,
             providesTags: ["Manuscripts"],
         }),
+        toggleEditorChoice: builder.mutation({
+            query: (id) => ({
+                url: `/manuscripts/admin/toggle-editor-choice/${id}`,
+                method: "PUT",
+            }),
+            invalidatesTags: ["Manuscripts"],
+        }),
     }),
 });
 
@@ -99,4 +107,5 @@ export const {
     useEditManuscriptAdminMutation,
     useDeleteManuscriptAdminMutation,
     useGetManuscriptByIdQuery,
+    useToggleEditorChoiceMutation,
 } = manuscriptApi;
