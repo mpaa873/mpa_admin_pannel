@@ -345,7 +345,7 @@ export default function SubmissionManagement() {
                   {Object.entries(selectedManuscript.files || {}).map(([key, url]) => {
                     if (!url) return null;
 
-                   
+
                     if (Array.isArray(url)) {
                       return (
                         <div key={key} className="col-span-full">
@@ -552,7 +552,17 @@ export default function SubmissionManagement() {
                     <div key={fileKey} className="p-5 border border-slate-200 rounded-2xl bg-white shadow-sm">
                       <label className="block text-xs font-bold text-slate-500 uppercase mb-3">{fileKey.replace(/([A-Z])/g, ' $1')}</label>
                       <div className="text-[10px] mb-3 p-2 bg-indigo-50 text-indigo-700 rounded-lg font-medium overflow-hidden truncate">
-                        {selectedManuscript.files?.[fileKey] ? "Current: " + selectedManuscript.files[fileKey].split('/').pop() : "No file uploaded"}
+                        {(() => {
+                          const file = selectedManuscript.files?.[fileKey];
+
+                          if (!file) return "No file uploaded";
+
+                          if (Array.isArray(file)) {
+                            return `${file.length} files uploaded`;
+                          }
+
+                          return "Current: " + file.split("/").pop();
+                        })()}
                       </div>
                       <input type="file" onChange={e => setNewFiles({ ...newFiles, [fileKey]: e.target.files[0] })} className="text-xs w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200 cursor-pointer" />
                     </div>
