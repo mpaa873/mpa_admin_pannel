@@ -203,6 +203,7 @@ export default function SubmissionManagement() {
                 <th className="px-6 py-4">Title</th>
                 <th className="px-6 py-4">Submitted By</th>
                 <th className="px-6 py-4 text-center">Status</th>
+                <th className="px-6 py-4 text-center">Plagiarism</th>
                 <th className="px-6 py-4 text-center text-amber-600">Choice</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
@@ -217,6 +218,39 @@ export default function SubmissionManagement() {
                     <span className={`flex items-center justify-center flex-wrap  px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(sub.status)}`}>
                       {sub.status}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    {sub.plagiarismStatus === "pending" ? (
+                      <span className="px-3 py-1 text-xs font-bold rounded-full bg-yellow-100 text-yellow-700 animate-pulse">
+                        Checking...
+                      </span>
+                    ) : (
+                      <div className="flex flex-col items-center gap-1">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-bold ${sub.plagiarismScore > 40
+                              ? "bg-red-100 text-red-600"
+                              : sub.plagiarismScore > 20
+                                ? "bg-yellow-100 text-yellow-600"
+                                : "bg-green-100 text-green-600"
+                            }`}
+                        >
+                          {sub.plagiarismScore}%
+                        </span>
+
+                        {/* mini progress bar */}
+                        <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full ${sub.plagiarismScore > 40
+                                ? "bg-red-500"
+                                : sub.plagiarismScore > 20
+                                  ? "bg-yellow-500"
+                                  : "bg-green-500"
+                              }`}
+                            style={{ width: `${sub.plagiarismScore}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-center">
                     <button
