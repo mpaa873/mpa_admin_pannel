@@ -301,7 +301,7 @@ export default function AssignedPapers() {
                     return (
                       <a 
                         key={key}
-                        href={path} 
+                        href={path.url} 
                         target="_blank" 
                         rel="noreferrer"
                         className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl hover:border-orange-300 hover:bg-orange-50/30 transition-all group shadow-sm"
