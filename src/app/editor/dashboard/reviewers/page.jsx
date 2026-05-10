@@ -3,6 +3,7 @@ import React, { useState, useMemo } from "react";
 import {
   useGetAssignedToEditorQuery,
   useAssignReviewersMutation,
+  useInviteReviewerMutation,
   useUpdateStatusMutation,
 } from "../../../../services/manuscriptApi";
 import { useGetAllReviewersQuery } from "../../../../services/userApi";
@@ -31,12 +32,18 @@ export default function ReviewersManagement() {
   const [assignReviewers, { isLoading: isAssigning }] = useAssignReviewersMutation();
   const [updateStatus, { isLoading: isUpdating }] = useUpdateStatusMutation();
 
+  const [inviteReviewer, { isLoading: isInviting }] =
+    useInviteReviewerMutation();
+
   // --- States ---
   const [activeModal, setActiveModal] = useState(null); // 'assign' | 'revision' | null
   const [selectedManuscript, setSelectedManuscript] = useState(null);
   const [selectedReviewers, setSelectedReviewers] = useState([]);
   const [revisionFeedback, setRevisionFeedback] = useState("");
   const [revisionFile, setRevisionFile] = useState(null);
+  const [inviteName, setInviteName] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteInstitution, setInviteInstitution] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -119,6 +126,32 @@ export default function ReviewersManagement() {
       refetch();
     } catch (error) {
       toast.error(error?.data?.message || "Failed to process revision.");
+    }
+  };
+
+  const handleInviteReviewer = async () => {
+    if (!inviteName || !inviteEmail) {
+      toast.error("Name and email required");
+      return;
+    }
+
+    try {
+      await inviteReviewer({
+        manuscriptId: selectedManuscript._id,
+        name: inviteName,
+        email: inviteEmail,
+        institution: inviteInstitution,
+      }).unwrap();
+
+      toast.success("Reviewer invited successfully");
+
+      setInviteName("");
+      setInviteEmail("");
+      setInviteInstitution("");
+
+      refetch();
+    } catch (error) {
+      toast.error(error?.data?.message || "Invite failed");
     }
   };
 
@@ -247,6 +280,183 @@ export default function ReviewersManagement() {
                   </label>
                 );
               })}
+
+            
+              <div className=" bg-white pt-5 pb-1 border-t border-slate-100 mt-6">
+
+                {/* INVITE TOGGLE BUTTON */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    document
+                      .getElementById("invite-reviewer-box")
+                      .classList.toggle("hidden")
+                  }
+                  className="
+      w-full flex items-center justify-between
+      px-5 py-4
+      rounded-2xl
+      border border-slate-200
+      bg-gradient-to-r from-slate-50 to-blue-50
+      hover:border-blue-200
+      hover:bg-blue-50/70
+      transition-all duration-200
+      group
+    "
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="
+        w-11 h-11 rounded-2xl
+        bg-blue-600
+        text-white
+        flex items-center justify-center
+        shadow-sm
+      ">
+                      <UserPlus className="w-5 h-5" />
+                    </div>
+
+                    <div className="text-left">
+                      <p className="text-sm font-bold text-slate-900">
+                        Invite External Reviewer
+                      </p>
+
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Add reviewer via email invitation
+                      </p>
+                    </div>
+                  </div>
+
+                  <ChevronRight className="
+      w-5 h-5 text-slate-400
+      group-hover:text-blue-600
+      transition-all
+    " />
+                </button>
+
+                {/* INVITE FORM */}
+                <div
+                  id="invite-reviewer-box"
+                  className="
+      hidden
+      mt-4
+      rounded-3xl
+      border border-slate-200
+      bg-slate-50/70
+      backdrop-blur-sm
+      p-5
+      space-y-4
+      animate-in fade-in duration-200
+    "
+                >
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+                        Reviewer Name
+                      </label>
+
+                      <input
+                        type="text"
+                        placeholder="Dr. John Doe"
+                        value={inviteName}
+                        onChange={(e) => setInviteName(e.target.value)}
+                        className="
+            w-full px-4 py-3
+            rounded-2xl
+            border border-slate-200
+            bg-white
+            text-sm
+            focus:ring-2 focus:ring-blue-500
+            focus:border-blue-500
+            outline-none
+            transition-all
+          "
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+                        Institution
+                      </label>
+
+                      <input
+                        type="text"
+                        placeholder="Harvard University"
+                        value={inviteInstitution}
+                        onChange={(e) => setInviteInstitution(e.target.value)}
+                        className="
+            w-full px-4 py-3
+            rounded-2xl
+            border border-slate-200
+            bg-white
+            text-sm
+            focus:ring-2 focus:ring-blue-500
+            focus:border-blue-500
+            outline-none
+            transition-all
+          "
+                      />
+                    </div>
+
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+                      Reviewer Email Address
+                    </label>
+
+                    <input
+                      type="email"
+                      placeholder="reviewer@example.com"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      className="
+          w-full px-4 py-3
+          rounded-2xl
+          border border-slate-200
+          bg-white
+          text-sm
+          focus:ring-2 focus:ring-blue-500
+          focus:border-blue-500
+          outline-none
+          transition-all
+        "
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3 pt-2">
+
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Reviewer will automatically receive login credentials and manuscript access.
+                    </p>
+
+                    <button
+                      onClick={handleInviteReviewer}
+                      disabled={isInviting}
+                      className="
+          shrink-0
+          px-6 py-3
+          rounded-2xl
+          bg-blue-600
+          hover:bg-blue-700
+          text-white
+          text-sm
+          font-bold
+          shadow-sm
+          transition-all
+          disabled:opacity-50
+        "
+                    >
+                      {isInviting ? "Inviting..." : "Send Invite"}
+                    </button>
+
+                  </div>
+
+                </div>
+              </div>
+          
+
             </div>
             <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
               <span className="text-sm font-bold text-slate-500">{selectedReviewers.length} Reviewers Selected</span>

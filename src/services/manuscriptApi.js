@@ -48,6 +48,14 @@ export const manuscriptApi = baseApi.injectEndpoints({
             }),
             invalidatesTags: ["Manuscripts", "Review"],
         }),
+
+        inviteReviewer: builder.mutation({
+            query: (data) => ({
+                url: "/manuscripts/admin/invite-reviewer",
+                method: "POST",
+                body: data,
+            }),
+        }),
         getAssignedToEditor: builder.query({
             query: (data) => ({
                 url: "/manuscripts/editor/assignments",
@@ -102,6 +110,7 @@ export const {
     useAssignEditorMutation,
     useUpdateStatusMutation,
     useAssignReviewersMutation,
+    useInviteReviewerMutation,
     useGetAssignedToEditorQuery,
     useUpdateSubmissionStatusMutation,
     useEditManuscriptAdminMutation,

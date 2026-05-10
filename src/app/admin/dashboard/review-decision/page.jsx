@@ -91,8 +91,8 @@ export default function AdminReviewTracking() {
     e.preventDefault();
     if (!actionData.status) return toast.error("Please select a status first.");
 
-    if (["Accepted", "Published", "Approved"].includes(actionData.status) && !canAcceptOrPublish) {
-      return toast.error("You need at least 2 'Accept' recommendations to Accept or Publish.");
+    if (["Accepted", "Published"].includes(actionData.status) && selectedManuscript.manuscript.status !== "Final Author Approved") {
+      return toast.error("Action Blocked: Author must approve the Final Script before you can Publish.");
     }
 
     const formData = new FormData();
@@ -481,18 +481,23 @@ export default function AdminReviewTracking() {
                               <option value="">-- Select Decision --</option>
                               <option value="Revision Required">Request Revision (Minor/Major)</option>
                               <option value="Rejected">Reject Manuscript</option>
+                              <option value="Approved">Approve Manuscript</option>
 
-                              {canAcceptOrPublish ? (
+                              {/* NEW: Show this only if currently Approved */}
+                              {selectedManuscript.manuscript.status === "Approved" && (
+                                <option value="Final Script Sent">Send Final Script to Author</option>
+                              )}
+
+                              {/* LOCK: Show publish options only if Author Approved the script */}
+                              {selectedManuscript.manuscript.status === "Final Author Approved" ? (
                                 <>
-                                  <option value="Approved">Approve (Accept Only)</option>
                                   <option value="Accepted">Schedule Manuscript (Schedule Publish)</option>
                                   <option value="Published">Publish Now (Immediate)</option>
                                 </>
                               ) : (
-                                <optgroup label="Needs 2 'Accept' Recommendations">
-                                  <option value="Approved" disabled>Approve (Disabled)</option>
-                                  <option value="Accepted" disabled>Accept Manuscript (Disabled)</option>
-                                  <option value="Published" disabled>Publish Now (Disabled)</option>
+                                <optgroup label="Needs Final Script Approval">
+                                  <option value="Accepted" disabled>Schedule (Locked)</option>
+                                  <option value="Published" disabled>Publish Now (Locked)</option>
                                 </optgroup>
                               )}
                             </select>
@@ -513,32 +518,40 @@ export default function AdminReviewTracking() {
                             </div>
                           )}
 
-                          {['Revision Required', 'Rejected'].includes(actionData.status) && (
+                          {/* Change this line to include 'Final Script Sent' */}
+                          {['Revision Required', 'Rejected', 'Final Script Sent'].includes(actionData.status) && (
                             <div className="space-y-4 animate-in fade-in duration-300">
+                              {/* Message to Author Area */}
                               <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Message to Author</label>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                                  {actionData.status === "Final Script Sent" ? "Instructions for Author" : "Message to Author"}
+                                </label>
                                 <textarea
                                   required
                                   rows={5}
                                   value={actionData.feedback}
                                   onChange={(e) => setActionData({ ...actionData, feedback: e.target.value })}
-                                  placeholder="Paste the final summarized feedback here..."
+                                  placeholder={actionData.status === "Final Script Sent" ? "Tell author to review the attached template..." : "Paste the final summarized feedback here..."}
                                   className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
                                 />
                               </div>
 
+                              {/* File Upload Area */}
                               <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Attach File (Optional)</label>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                                  {actionData.status === "Final Script Sent" ? "Attach Final Template (Required)" : "Attach File (Optional)"}
+                                </label>
                                 <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 bg-slate-50 text-center hover:bg-slate-100 transition-colors cursor-pointer relative">
                                   <input
                                     type="file"
+                                    required={actionData.status === "Final Script Sent"} // Final script ke liye required
                                     onChange={(e) => setActionData({ ...actionData, file: e.target.files[0] })}
                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                   />
                                   <div className="flex flex-col items-center gap-1">
                                     <Icons.UploadCloud size={20} className="text-slate-400" />
                                     <span className="text-xs font-bold text-slate-600">
-                                      {actionData.file ? actionData.file.name : "Click to upload feedback file"}
+                                      {actionData.file ? actionData.file.name : "Click to upload file"}
                                     </span>
                                   </div>
                                 </div>
@@ -552,11 +565,12 @@ export default function AdminReviewTracking() {
                             className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black py-3 rounded-xl hover:opacity-90 transition-all disabled:opacity-50 flex justify-center items-center gap-2 text-sm mt-2 shadow-md hover:shadow-lg hover:shadow-blue-500/30"
                           >
                             {isUpdating ? <Icons.Loader2 size={18} className="animate-spin" /> : <Icons.Check size={18} />}
-                            {isUpdating ? "Processing..." : actionData.status === "Accepted"
-                              ? "Accept & Schedule Publish"
-                              : actionData.status === "Approved"
-                                ? "Approve Manuscript"
-                                : "Submit Decision"}
+                            {isUpdating ? "Processing..." :
+                              actionData.status === "Accepted" ? "Accept & Schedule Publish" :
+                                actionData.status === "Approved" ? "Approve Manuscript" :
+                                  actionData.status === "Final Script Sent" ? "Send to Author" : // Added this
+                                    "Submit Decision"
+                            }
                           </button>
                         </form>
                       </div>

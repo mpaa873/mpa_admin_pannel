@@ -10,7 +10,7 @@ import {
   useGetEligibleReviewersQuery
 } from "../../../../services/reviewerApi";
 import { Loader2 } from "lucide-react";
-import * as Icons from "lucide-react";  
+import * as Icons from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function EditorDecisionDashboard() {
@@ -39,6 +39,56 @@ export default function EditorDecisionDashboard() {
   const isLocked =
     selectedPaper?.status === "Awaiting Admin Decision" ||
     selectedPaper?.status === "Published";
+
+  // Auto generate revision comments from reviewers
+  const generateRevisionFeedback = () => {
+    if (!currentTracking?.reviewers?.length) return "";
+
+    const allComments = currentTracking.reviewers
+      .filter(
+        (rev) =>
+          rev.commentsToAuthor &&
+          rev.commentsToAuthor.trim() !== ""
+      )
+      .flatMap((rev, index) => {
+        const reviewerName = `Reviewer ${index + 1}`;
+
+        return rev.commentsToAuthor
+          .split("\n")
+          .filter((line) => line.trim() !== "")
+          .map((comment) => `•${comment.trim()}`);
+      });
+
+    return `Dear Researcher,
+
+After peer-review evaluation, the reviewers have requested revisions before further consideration.
+
+Please address the following comments carefully:
+
+${allComments.join("\n")}
+
+Please revise the manuscript accordingly and upload:
+1. Revised manuscript
+2. Point-by-point response document
+
+Regards,
+Editorial`;
+  };
+
+  // Auto fill revision comments for editor
+  useEffect(() => {
+    if (
+      actionData.status === "Revision Required" &&
+      currentTracking?.reviewers?.length &&
+      !actionData.feedback.trim()
+    ) {
+      setActionData((prev) => ({
+        ...prev,
+        feedback: generateRevisionFeedback(),
+      }));
+    }
+  }, [actionData.status, currentTracking]);
+
 
   // Logic to handle reviewer assignment
   const handleAssignReviewer = async () => {
@@ -340,7 +390,19 @@ export default function EditorDecisionDashboard() {
                           <select
                             required
                             value={actionData.status}
-                            onChange={(e) => setActionData({ ...actionData, status: e.target.value })}
+                            onChange={(e) => {
+                              const value = e.target.value;
+
+                              setActionData((prev) => ({
+                                ...prev,
+                                status: value,
+
+                                feedback:
+                                  value === "Revision Required"
+                                    ? prev.feedback
+                                    : "",
+                              }));
+                            }}
                             className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-sm font-bold focus:border-indigo-600 outline-none transition-all"
                           >
                             <option value="">-- Choose Decision --</option>
