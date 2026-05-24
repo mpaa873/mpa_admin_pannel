@@ -220,7 +220,7 @@ const AllSubmissions = () => {
                           </button>
 
                           <button onClick={() => { setSelectedManuscript(item); setModalType('reject'); }} className="p-2 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors" title="Reject Submission"><XCircle size={18} /></button>
-                          <a href={item.files.manuscriptFile} target="_blank" className="p-2 text-gray-400 hover:text-gray-900 transition-colors"><ExternalLink size={18} /></a>
+                          <a href={item?.files.manuscriptFile?.url} target="_blank" className="p-2 text-gray-400 hover:text-gray-900 transition-colors"><ExternalLink size={18} /></a>
                         </div>
 
                         {item.isRevised && (

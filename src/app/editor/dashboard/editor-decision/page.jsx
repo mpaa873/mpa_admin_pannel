@@ -183,7 +183,7 @@ Editorial`;
                     {paper.manuscriptId}
                   </span>
                   {/* REVISION ALERT BADGE */}
-                  {(paper.status === "Revision Submitted" || paper.files?.reviewChecklist) && (
+                  {paper.isRevised && (
                     <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-md text-[11px] font-black uppercase flex items-center gap-1 animate-pulse">
                       <Icons.RefreshCw size={12} /> Revision Received
                     </span>
@@ -245,7 +245,7 @@ Editorial`;
               <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-slate-50/50">
 
                 {/* Author Revision Section (If exists) */}
-                {selectedPaper.files?.reviewChecklist && (
+                {selectedPaper.isRevised && (
                   <div className="bg-white border-2 border-emerald-500/20 p-6 rounded-[24px] shadow-sm flex justify-between items-center relative overflow-hidden group">
                     <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
                     <div className="flex items-center gap-4">

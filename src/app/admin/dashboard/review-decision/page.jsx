@@ -13,6 +13,9 @@ export default function AdminReviewTracking() {
   const [actionData, setActionData] = useState({ status: "", feedback: "", file: null, publishDate: "" });
   const [selectedReviewers, setSelectedReviewers] = useState([]);
 
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+  const [publishPreview, setPublishPreview] = useState({ vol: 0, iss: 0, label: "" });
+
   // Check if the current paper is already Published or Rejected to lock editing
   const isFinalized = ["Published", "Rejected"].includes(selectedManuscript?.manuscript?.status);
 
@@ -90,6 +93,26 @@ export default function AdminReviewTracking() {
   const handleActionSubmit = async (e) => {
     e.preventDefault();
     if (!actionData.status) return toast.error("Please select a status first.");
+
+    if (actionData.status === "Published") {
+      if (selectedManuscript.manuscript.status !== "Final Author Approved") {
+        return toast.error("Action Blocked: Author must approve the Final Script first.");
+      }
+
+      // Real-time calculation for preview
+      const d = new Date();
+      const vol = d.getFullYear() - 2026 + 1;
+      const month = d.getMonth() + 1;
+      let iss = 1, label = "";
+      if (month <= 3) { iss = 1; label = "Jan–Mar"; }
+      else if (month <= 6) { iss = 2; label = "Apr–Jun"; }
+      else if (month <= 9) { iss = 3; label = "Jul–Sep"; }
+      else { iss = 4; label = "Oct–Dec"; }
+
+      setPublishPreview({ vol, iss, label });
+      setIsPublishModalOpen(true);
+      return; // Stop here, modal will handle the final submit
+    }
 
     if (["Accepted", "Published"].includes(actionData.status) && selectedManuscript.manuscript.status !== "Final Author Approved") {
       return toast.error("Action Blocked: Author must approve the Final Script before you can Publish.");
@@ -626,9 +649,128 @@ export default function AdminReviewTracking() {
 
             </div>
           </div>
+
+
         </div>
       )}
 
+      {isPublishModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-2xl rounded-[1.5rem] shadow-2xl overflow-hidden border border-slate-200 flex flex-col">
+
+            {/* Header - Clean Slate Theme */}
+            <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-white">
+              <div>
+                <h2 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                  <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                    <Icons.Globe size={20} />
+                  </div>
+                  Final Publication Review
+                </h2>
+                <p className="text-slate-500 text-xs font-medium mt-1">
+                  Assigning official journal metadata and archiving the manuscript.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsPublishModalOpen(false)}
+                className="p-2 hover:bg-slate-100 text-slate-400 hover:text-rose-500 rounded-full transition-all"
+              >
+                <Icons.X size={20} />
+              </button>
+            </div>
+
+            <div className="p-8 space-y-8 bg-slate-50/50">
+
+              {/* Publication Metadata Grid */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Volume</span>
+                  <span className="text-xl font-black text-blue-600">Vol. {publishPreview.vol}</span>
+                </div>
+                <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Issue</span>
+                  <span className="text-xl font-black text-blue-600">Iss. {publishPreview.iss}</span>
+                </div>
+                <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Period</span>
+                  <span className="text-sm font-bold text-slate-700">{publishPreview.label}</span>
+                </div>
+              </div>
+
+              {/* Final File Upload Section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between ml-1">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest">Final Layout Document (PDF)</label>
+                  {actionData.file && (
+                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                      File Ready
+                    </span>
+                  )}
+                </div>
+
+                <div className="relative group">
+                  <input
+                    type="file"
+                    required
+                    accept=".pdf"
+                    onChange={(e) => setActionData({ ...actionData, file: e.target.files[0] })}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <div className={`border-2 border-dashed transition-all rounded-2xl p-10 text-center flex flex-col items-center justify-center
+              ${actionData.file
+                      ? 'border-blue-500 bg-blue-50/30'
+                      : 'border-slate-200 bg-white group-hover:border-blue-400 group-hover:bg-slate-50'}`}>
+
+                    <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 transition-colors
+                ${actionData.file ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-500'}`}>
+                      <Icons.FileText size={28} />
+                    </div>
+
+                    <p className="text-sm font-black text-slate-700">
+                      {actionData.file ? actionData.file.name : "Click to select the final formatted PDF"}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1 font-medium">
+                      Ensure this version includes Volume, Issue, and Journal headers.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="px-8 py-6 bg-white border-t border-slate-100 flex items-center gap-4">
+              <button
+                onClick={() => setIsPublishModalOpen(false)}
+                className="px-6 py-4 text-sm font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={isUpdating}
+                onClick={async () => {
+                  if (!actionData.file) return toast.error("Please upload the final PDF paper.");
+                  const formData = new FormData();
+                  formData.append("manuscriptId", selectedManuscript.manuscript._id);
+                  formData.append("status", "Published");
+                  formData.append("feedbackFile", actionData.file);
+                  try {
+                    await updateStatus(formData).unwrap();
+                    toast.success("Article has been successfully published!");
+                    setIsPublishModalOpen(false);
+                    setSelectedManuscript(null);
+                    refetch();
+                  } catch (err) { toast.error(err?.data?.message || "Publishing failed"); }
+                }}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-black py-4 rounded-xl shadow-lg shadow-blue-200 hover:shadow-blue-300 transition-all flex items-center justify-center gap-3 text-base active:scale-[0.98]"
+              >
+                {isUpdating ? <Icons.Loader2 size={20} className="animate-spin" /> : <Icons.Globe size={20} />}
+                {isUpdating ? "ARCHIVING..." : "CONFIRM & PUBLISH LIVE"}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
