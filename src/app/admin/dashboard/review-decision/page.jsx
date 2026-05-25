@@ -99,19 +99,30 @@ export default function AdminReviewTracking() {
         return toast.error("Action Blocked: Author must approve the Final Script first.");
       }
 
-      // Real-time calculation for preview
+      // --- YE WALA HISSA REPLACE KAREIN (Logic for 2026 Special Issue) ---
       const d = new Date();
-      const vol = d.getFullYear() - 2026 + 1;
+      const year = d.getFullYear();
       const month = d.getMonth() + 1;
-      let iss = 1, label = "";
-      if (month <= 3) { iss = 1; label = "Jan–Mar"; }
-      else if (month <= 6) { iss = 2; label = "Apr–Jun"; }
-      else if (month <= 9) { iss = 3; label = "Jul–Sep"; }
-      else { iss = 4; label = "Oct–Dec"; }
+      const vol = year - 2026 + 1;
+
+      let iss = 1;
+      let label = "";
+
+      if (year === 2026) {
+        if (month >= 4 && month <= 6) { iss = 1; label = "Apr–Jun"; }
+        else if (month >= 7 && month <= 9) { iss = 2; label = "Jul–Sep"; }
+        else { iss = 3; label = "Oct–Dec"; }
+      } else {
+        if (month <= 3) { iss = 1; label = "Jan–Mar"; }
+        else if (month <= 6) { iss = 2; label = "Apr–Jun"; }
+        else if (month <= 9) { iss = 3; label = "Jul–Sep"; }
+        else { iss = 4; label = "Oct–Dec"; }
+      }
+      // --- END OF REPLACEMENT ---
 
       setPublishPreview({ vol, iss, label });
       setIsPublishModalOpen(true);
-      return; // Stop here, modal will handle the final submit
+      return;
     }
 
     if (["Accepted", "Published"].includes(actionData.status) && selectedManuscript.manuscript.status !== "Final Author Approved") {
