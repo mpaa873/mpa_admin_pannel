@@ -49,6 +49,14 @@ export const userApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["User"],
     }),
+    changeUserPassword: builder.mutation({
+      query: ({ id, newPassword }) => ({
+        url: `/users/change-password/${id}`,
+        method: "PUT",
+        body: { newPassword },
+      }),
+      invalidatesTags: ["User"],
+    }),
   }),
 });
 
@@ -60,5 +68,6 @@ export const {
   useToggleBlockMutation,
   useGetAllEditorsQuery,
   useGetAllReviewersQuery,
-  useDeleteUserMutation
+  useDeleteUserMutation,
+  useChangeUserPasswordMutation 
 } = userApi;

@@ -18,6 +18,8 @@ export const RECENT_SUBMISSIONS = [
 export const SIDEBAR_LINKS = [
   { name: "Overview", href: "/admin/dashboard", icon: "LayoutDashboard" },
   { name: "User Management", href: "/admin/dashboard/users", icon: "Users" },
+  {name: "Credential Management",href: "/admin/dashboard/credential-management",
+    icon: "KeyRound"},
   { name: "Reviewer Status", href: "/admin/dashboard/review-status", icon: "BookOpen" },
   { name: "Review & Decisions", href: "/admin/dashboard/review-decision", icon: "GitCompare" },
   { name: "Submission Management", href: "/admin/dashboard/submission-management", icon: "Settings" },
