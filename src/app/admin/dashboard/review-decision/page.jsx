@@ -172,6 +172,42 @@ export default function AdminReviewTracking() {
     );
   };
 
+  const generateRevisionFeedback = () => {
+    if (!selectedManuscript?.reviewers) return "";
+
+    const feedbacks = selectedManuscript.reviewers
+      .filter(
+        (reviewer) =>
+          reviewer.reviewStatus === "Completed" &&
+          reviewer.commentsToAuthor &&
+          ["Minor revisions", "Major revisions"].includes(
+            reviewer.recommendation
+          )
+      )
+      .map(
+        (reviewer, index) =>
+          `Reviewer ${index + 1}
+${reviewer.commentsToAuthor
+            .split("\n")
+            .filter(Boolean)
+            .map(item => `• ${item}`)
+            .join("\n")}`
+      );
+
+    return `Dear Author,
+
+Based on reviewer evaluations, please address the following comments:
+
+${feedbacks.join("\n\n")}
+
+After completing all revisions, please upload:
+• Revised Manuscript
+• Point-by-Point Response Sheet
+
+Regards,
+Editorial Office`;
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-[1400px] mx-auto space-y-6 bg-slate-50 min-h-screen">
 
@@ -509,7 +545,22 @@ export default function AdminReviewTracking() {
                             <select
                               required
                               value={actionData.status}
-                              onChange={(e) => setActionData({ ...actionData, status: e.target.value })}
+                              onChange={(e) => {
+                                const status = e.target.value;
+
+                                if (status === "Revision Required") {
+                                  setActionData({
+                                    ...actionData,
+                                    status,
+                                    feedback: generateRevisionFeedback(),
+                                  });
+                                } else {
+                                  setActionData({
+                                    ...actionData,
+                                    status,
+                                  });
+                                }
+                              }}
                               className="w-full bg-slate-50 border border-slate-300 text-slate-800 rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer appearance-none"
                             >
                               <option value="">-- Select Decision --</option>
