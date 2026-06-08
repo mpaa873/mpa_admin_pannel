@@ -69,7 +69,7 @@ ${allComments.join("\n")}
 
 Please revise the manuscript accordingly and upload:
 1. Revised manuscript
-2. Point-by-point response document
+2. Author Rebuttal Letter response document
 
 Regards,
 Editorial`;
