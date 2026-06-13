@@ -7,7 +7,8 @@ import {
   useToggleEditorChoiceMutation
 } from "../../../../services/manuscriptApi";
 import toast from "react-hot-toast";
-import { Star } from "lucide-react";
+import { Star, Route } from "lucide-react";
+import PaperTracking from "../../../../components/PaperTracking";
 
 // --- PROFESSIONAL SVG ICONS ---
 const EditIcon = () => (
@@ -46,6 +47,7 @@ export default function SubmissionManagement() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
 
   const [activeTab, setActiveTab] = useState("details"); // For Edit Modal
 
@@ -94,6 +96,11 @@ export default function SubmissionManagement() {
   const handleOpenView = (manuscript) => {
     setSelectedManuscript(manuscript);
     setIsViewModalOpen(true);
+  };
+
+  const handleOpenTracking = (manuscript) => {
+    setSelectedManuscript(manuscript);
+    setIsTrackingModalOpen(true);
   };
 
   // Handle Edit (Pre-fill Form)
@@ -287,6 +294,13 @@ export default function SubmissionManagement() {
                     </button>
                   </td>
                   <td className="px-6 py-4 text-right flex justify-end gap-2">
+                    <button
+                      onClick={() => handleOpenTracking(sub)}
+                      className="p-2 text-slate-600 hover:bg-white hover:text-indigo-600 rounded-lg border border-transparent hover:border-slate-200 transition"
+                      title="Paper Tracking"
+                    >
+                      <Route size={18} />
+                    </button>
                     <button onClick={() => handleOpenView(sub)} className="p-2 text-slate-600 hover:bg-white hover:text-indigo-600 rounded-lg border border-transparent hover:border-slate-200 transition" title="View Details">
                       <EyeIcon />
                     </button>
@@ -609,6 +623,48 @@ export default function SubmissionManagement() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {isTrackingModalOpen && selectedManuscript && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-[80] p-4">
+
+          <div className="bg-white w-full max-w-7xl h-[95vh] rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+
+            {/* Header */}
+            <div className=" p-6 border-b flex justify-between items-center">
+
+              <div>
+                <h2 className="text-2xl font-bold text-slate-800">
+                  Paper Tracking
+                </h2>
+
+                <p className="text-slate-500 text-sm">
+                  {selectedManuscript.manuscriptId}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setIsTrackingModalOpen(false)}
+                className="p-2 rounded-full hover:bg-red-50 hover:text-red-500"
+              >
+                <CloseIcon />
+              </button>
+
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-8 bg-slate-50">
+
+              <PaperTracking
+                manuscriptId={selectedManuscript._id}
+                currentStatus={selectedManuscript.status}
+              />
+
+            </div>
+
+          </div>
+
         </div>
       )}
 
