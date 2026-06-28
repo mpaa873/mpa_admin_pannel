@@ -22,6 +22,11 @@ export const SIDEBAR_LINKS = [
     name: "Credential Management", href: "/admin/dashboard/credential-management",
     icon: "KeyRound"
   },
+  {
+    name: "Ad-Hoc Management",
+    href: "/admin/dashboard/add-hoc-issue",
+    icon: "FileStack"
+  },
   { name: "Reviewer Status", href: "/admin/dashboard/review-status", icon: "BookOpen" },
   { name: "Review & Decisions", href: "/admin/dashboard/review-decision", icon: "GitCompare" },
   { name: "Submission Management", href: "/admin/dashboard/submission-management", icon: "Settings" },

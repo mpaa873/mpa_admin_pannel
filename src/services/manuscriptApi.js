@@ -100,6 +100,15 @@ export const manuscriptApi = baseApi.injectEndpoints({
             }),
             invalidatesTags: ["Manuscripts"],
         }),
+
+        updatePublishedPaperIssue: builder.mutation({
+            query: (data) => ({
+                url: "/manuscripts/update-published-paper-issue",
+                method: "PUT",
+                body: data,
+            }),
+            invalidatesTags: ["Manuscripts"],
+        }),
     }),
 });
 
@@ -117,4 +126,5 @@ export const {
     useDeleteManuscriptAdminMutation,
     useGetManuscriptByIdQuery,
     useToggleEditorChoiceMutation,
+    useUpdatePublishedPaperIssueMutation,
 } = manuscriptApi;
